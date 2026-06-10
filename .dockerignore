@@ -1,0 +1,18 @@
+# runtime state — mount it instead of baking it in
+data/
+
+# vcs / ci
+.git
+.github
+
+# never present (zero-dep), but keep the image honest
+node_modules
+
+# local noise
+*.log
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+pm-output.txt
+.orch-lessons.md

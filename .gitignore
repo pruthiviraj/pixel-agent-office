@@ -1,5 +1,6 @@
 # runtime state written by the orchestrator + server
 data/
+data/history/
 pm-output.txt
 
 # lessons file is created in the TARGET project, but ignore it here too

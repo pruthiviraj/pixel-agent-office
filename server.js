@@ -36,6 +36,8 @@ const JOBS_DIR = path.join(
 );
 const TEAM_FILE = path.join(DATA_DIR, "team.json");           // written by orchestrate.js
 const TEAM_LOGS_FILE = path.join(DATA_DIR, "team-logs.json");
+const CONTROL_FILE = path.join(DATA_DIR, "control.json");     // UI -> engine command channel
+const HISTORY_DIR = path.join(DATA_DIR, "history");           // engine writes <runId>.json per sprint
 
 // ---------- claude CLI ---------------------------------------------------
 
@@ -99,6 +101,60 @@ function loadTeam() {
 function loadTeamLogs() {
   try { return JSON.parse(fs.readFileSync(TEAM_LOGS_FILE, "utf8")); }
   catch { return {}; }
+}
+
+// ---------- control channel (UI -> orchestrate.js via data/control.json) --
+
+const CONTROL_TYPES = new Set(["pause", "resume", "cancel", "retry", "force-pass", "force-fail"]);
+const CONTROL_NEEDS_TASK = new Set(["retry", "force-pass", "force-fail"]);
+
+function appendControl(cmd) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  let doc = { commands: [] };
+  try {
+    const cur = JSON.parse(fs.readFileSync(CONTROL_FILE, "utf8"));
+    if (cur && Array.isArray(cur.commands)) doc = cur;
+  } catch {}
+  doc.commands.push(cmd);
+  // atomic: write a temp file then rename over the real one
+  const tmp = CONTROL_FILE + "." + process.pid + "." + Date.now() + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(doc, null, 2));
+  fs.renameSync(tmp, CONTROL_FILE);
+}
+
+// ---------- run history (data/history/<runId>.json) ------------------------
+
+function safeRunId(id) {
+  return typeof id === "string" && /^[A-Za-z0-9._-]{1,128}$/.test(id) && !id.includes("..") ? id : null;
+}
+
+function listHistory() {
+  let files = [];
+  try { files = fs.readdirSync(HISTORY_DIR).filter((f) => f.endsWith(".json")); }
+  catch { return []; }
+  const runs = [];
+  for (const f of files) {
+    try {
+      const r = JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, f), "utf8"));
+      runs.push({
+        runId: r.runId || f.replace(/\.json$/, ""),
+        startedAt: r.startedAt || null,
+        endedAt: r.endedAt || null,
+        epic: r.epic || "",
+        summary: r.summary || "",
+        totals: r.totals || null,
+      });
+    } catch {}
+  }
+  runs.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0)); // newest first
+  return runs;
+}
+
+function readHistoryRun(runId) {
+  const id = safeRunId(runId);
+  if (!id) return null;
+  try { return JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, id + ".json"), "utf8")); }
+  catch { return null; }
 }
 
 function readStateFile(sessionId) {
@@ -299,17 +355,84 @@ const DEMO = {
   },
   orch: {
     active: true, phase: "building",
+    runId: "run-" + (Date.now() - 18 * 60e3),
+    paused: false,
     epic: "Build a Quote line discount engine (tiered rules + LWC editor)",
-    summary: "PM split the epic into 4 tasks; devs build, QA verifies each.",
+    summary: "PM split the epic into 5 tasks; devs build, QA verifies each.",
+    budget: { capUsd: 5, spentUsd: 1.37 },
+    totals: {
+      tasksDone: 1, tasksFailed: 1, tokensIn: 184_220, tokensOut: 41_730,
+      costUsd: 1.37, startedAt: Date.now() - 18 * 60e3, tasksPerHour: 3.3,
+    },
     board: [
-      { id: "T1", title: "Discount rule data model",   state: "done",    retries: 0, deps: [] },
-      { id: "T2", title: "DiscountService Apex",        state: "qa",      retries: 1, deps: ["T1"] },
-      { id: "T3", title: "Quote line LWC editor",       state: "dev",     retries: 0, deps: ["T2"] },
-      { id: "T4", title: "Opportunity rollup trigger",  state: "planned", retries: 0, deps: ["T2"] },
+      { id: "T1", title: "Discount rule data model",   state: "done",      retries: 0, deps: [] },
+      { id: "T2", title: "DiscountService Apex",        state: "qa",        retries: 1, deps: ["T1"] },
+      { id: "T3", title: "Quote line LWC editor",       state: "dev",       retries: 0, deps: ["T2"] },
+      { id: "T4", title: "Opportunity rollup trigger",  state: "planned",   retries: 0, deps: ["T2"] },
+      { id: "T5", title: "Bulk discount import job",    state: "failed",    retries: 2, deps: ["T1"] },
     ],
-    log: ["PM planned 4 tasks", "✓ DONE T1 — QA passed", "↻ RETRY T2 (attempt 2/3)", "→ QA T2 verifying", "→ DEV T3"],
+    workers: [
+      { id: "w-pm",   name: "pm: sprint planner",        team: "planning",  room: "planning", status: "idle",
+        summary: "plan locked — monitoring board", model: "claude-opus-4-6", costUsd: 0.42, tokensIn: 61_000, tokensOut: 9_800 },
+      { id: "w-dev1", name: "dev: T3 LWC editor",        team: "developer", room: "dev",      status: "working",
+        summary: "Edit force-app/.../quoteLineEditor.js", model: "claude-sonnet-4-6", costUsd: 0.55, tokensIn: 78_400, tokensOut: 21_300 },
+      { id: "w-qa1",  name: "qa: verify T2 service",     team: "tester",    room: "qa",       status: "working",
+        summary: "running DiscountServiceTest (attempt 2)", model: "claude-haiku-4-5", costUsd: 0.40, tokensIn: 44_820, tokensOut: 10_630 },
+    ],
+    log: ["PM planned 5 tasks", "✓ DONE T1 — QA passed", "↻ RETRY T2 (attempt 2/3)", "→ QA T2 verifying", "→ DEV T3", "✗ FAIL T5 — import job spec rejected twice"],
   },
 };
+
+// sample sprint history shown when the UI is in demo mode (?demo=1)
+const DEMO_HISTORY = [
+  {
+    runId: "run-demo-2", startedAt: Date.now() - 26 * 3600e3, endedAt: Date.now() - 25 * 3600e3,
+    epic: "Student fee receipt PDF + email on payment", profile: "default", project: "~/projects/shop",
+    summary: "4/4 tasks done in 58m under budget.",
+    totals: { tasksDone: 4, tasksFailed: 0, tokensIn: 402_000, tokensOut: 88_500, costUsd: 2.84, startedAt: Date.now() - 26 * 3600e3, tasksPerHour: 4.1 },
+    budget: { capUsd: 5, spentUsd: 2.84 },
+    board: [
+      { id: "T1", title: "Receipt PDF generator service", state: "done", retries: 0, deps: [] },
+      { id: "T2", title: "Email send on payment trigger",  state: "done", retries: 0, deps: ["T1"] },
+      { id: "T3", title: "Receipt template + branding",    state: "done", retries: 1, deps: ["T1"] },
+      { id: "T4", title: "Tests + bulk scenarios",         state: "done", retries: 0, deps: ["T2", "T3"] },
+    ],
+    workers: [
+      { id: "w-pm", name: "pm: planner", team: "planning", room: "planning", model: "claude-opus-4-6", costUsd: 0.61, tokensIn: 92_000, tokensOut: 14_000 },
+      { id: "w-d1", name: "dev: builder", team: "developer", room: "dev", model: "claude-sonnet-4-6", costUsd: 1.58, tokensIn: 240_000, tokensOut: 58_000 },
+      { id: "w-q1", name: "qa: verifier", team: "tester", room: "qa", model: "claude-haiku-4-5", costUsd: 0.65, tokensIn: 70_000, tokensOut: 16_500 },
+    ],
+    events: [
+      { at: Date.now() - 26 * 3600e3, msg: "PM planned 4 tasks" },
+      { at: Date.now() - 25.7 * 3600e3, msg: "✓ DONE T1 — QA passed" },
+      { at: Date.now() - 25.4 * 3600e3, msg: "↻ RETRY T3 (attempt 2/3)" },
+      { at: Date.now() - 25.1 * 3600e3, msg: "✓ DONE T4 — sprint complete" },
+    ],
+  },
+  {
+    runId: "run-demo-1", startedAt: Date.now() - 3 * 86400e3, endedAt: Date.now() - 3 * 86400e3 + 42 * 60e3,
+    epic: "Hostel room allocation wizard (LWC)", profile: "default", project: "~/projects/shop",
+    summary: "2/3 done — budget cap hit, T3 cancelled.",
+    totals: { tasksDone: 2, tasksFailed: 0, tokensIn: 310_000, tokensOut: 61_000, costUsd: 3.01, startedAt: Date.now() - 3 * 86400e3, tasksPerHour: 2.9 },
+    budget: { capUsd: 3, spentUsd: 3.01 },
+    board: [
+      { id: "T1", title: "Allocation rules engine",  state: "done",      retries: 0, deps: [] },
+      { id: "T2", title: "Wizard LWC (3 steps)",     state: "done",      retries: 1, deps: ["T1"] },
+      { id: "T3", title: "Occupancy report",         state: "cancelled", retries: 0, deps: ["T1"], note: "budget cap" },
+    ],
+    workers: [
+      { id: "w-pm", name: "pm: planner", team: "planning", room: "planning", model: "claude-opus-4-6", costUsd: 0.55, tokensIn: 80_000, tokensOut: 12_000 },
+      { id: "w-d1", name: "dev: builder", team: "developer", room: "dev", model: "claude-sonnet-4-6", costUsd: 1.92, tokensIn: 195_000, tokensOut: 41_000 },
+      { id: "w-q1", name: "qa: verifier", team: "tester", room: "qa", model: "claude-haiku-4-5", costUsd: 0.54, tokensIn: 35_000, tokensOut: 8_000 },
+    ],
+    events: [
+      { at: Date.now() - 3 * 86400e3, msg: "PM planned 3 tasks" },
+      { at: Date.now() - 3 * 86400e3 + 20 * 60e3, msg: "✓ DONE T1 — QA passed" },
+      { at: Date.now() - 3 * 86400e3 + 39 * 60e3, msg: "✓ DONE T2 — QA passed" },
+      { at: Date.now() - 3 * 86400e3 + 42 * 60e3, msg: "⛔ budget cap $3 reached — T3 cancelled" },
+    ],
+  },
+];
 
 // ---------- http server ------------------------------------------------------
 
@@ -365,6 +488,48 @@ const server = http.createServer(async (req, res) => {
         } catch (e) { return json(500, { error: e.message }); }
       });
       return;
+    }
+
+    if (url.pathname === "/api/control" && req.method === "POST") {
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        try {
+          const { type, taskId, reason } = JSON.parse(body || "{}");
+          if (!CONTROL_TYPES.has(type))
+            return json(400, { error: "invalid type — expected one of: " + [...CONTROL_TYPES].join(", ") });
+          if (CONTROL_NEEDS_TASK.has(type) && (typeof taskId !== "string" || !taskId.trim()))
+            return json(400, { error: "taskId is required for " + type });
+          const cmd = {
+            id: "c-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+            at: Date.now(),
+            type,
+          };
+          if (taskId) cmd.taskId = String(taskId).trim();
+          if (reason) cmd.reason = String(reason).slice(0, 500);
+          appendControl(cmd);
+          return json(200, { ok: true, id: cmd.id });
+        } catch (e) { return json(500, { error: e.message }); }
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/history") {
+      if (url.searchParams.get("demo") === "1")
+        return json(200, { demo: true, runs: DEMO_HISTORY.map(({ runId, startedAt, endedAt, epic, summary, totals }) => ({ runId, startedAt, endedAt, epic, summary, totals })) });
+      return json(200, { runs: listHistory() });
+    }
+
+    if (url.pathname.startsWith("/api/history/")) {
+      const raw = decodeURIComponent(url.pathname.slice("/api/history/".length));
+      if (!safeRunId(raw)) return json(400, { error: "invalid runId" });
+      if (url.searchParams.get("demo") === "1") {
+        const d = DEMO_HISTORY.find((r) => r.runId === raw);
+        if (d) return json(200, d);
+      }
+      const run = readHistoryRun(raw);
+      if (!run) return json(404, { error: "run not found: " + raw });
+      return json(200, run);
     }
 
     if (url.pathname.startsWith("/api/logs/")) {

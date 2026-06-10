@@ -28,6 +28,14 @@
         --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
         --pixel: "Press Start 2P", ui-monospace, monospace;
       }
+      body[data-theme="night"] {
+        --bg: #05070b;
+        --panel: #0a0e14;
+        --line: #16202b;
+        --ink: #c2cdd6;
+        --dim: #5d6d79;
+        --faint: #38454f;
+      }
       * {
         box-sizing: border-box;
         margin: 0;
@@ -47,7 +55,7 @@
         align-items: center;
         gap: 18px;
         flex-wrap: wrap;
-        padding: 14px 26px;
+        padding: 12px 26px;
         border-bottom: 1px solid var(--line);
         position: sticky;
         top: 0;
@@ -153,6 +161,104 @@
         padding: 1px 5px;
       }
 
+      /* ====================== LIVE HUD ====================== */
+      #hud {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 12px 26px 0;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        font-family: var(--pixel);
+        font-size: 7px;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+      }
+      #hud .hcell {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 8px;
+        border: 1px solid transparent;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      #hud .hcell b {
+        font-size: 10px;
+        color: var(--ink);
+        font-weight: 400;
+      }
+      #hud .hcell b.money {
+        color: var(--warn);
+      }
+      #hud .hcell b.good {
+        color: var(--ok);
+      }
+      #hud .hcell b.bad {
+        color: var(--err);
+      }
+      #hud .hsp {
+        flex: 1;
+      }
+      #hud .bbar {
+        display: inline-block;
+        width: 90px;
+        height: 8px;
+        border: 1px solid var(--line);
+        background: #0a0e13;
+        overflow: hidden;
+        vertical-align: middle;
+      }
+      #hud .bbar i {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: var(--ok);
+        transition:
+          width 0.6s ease,
+          background 0.6s ease;
+      }
+      #hud .bbar i.amber {
+        background: var(--warn);
+      }
+      #hud .bbar i.red {
+        background: var(--err);
+      }
+      .hbtn {
+        font-family: var(--pixel);
+        font-size: 7px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink);
+        background: #0d141b;
+        border: 1px solid var(--line);
+        padding: 7px 10px;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 #000;
+      }
+      .hbtn:hover:not(:disabled) {
+        border-color: var(--dev);
+        color: var(--dev);
+      }
+      .hbtn:active:not(:disabled) {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 #000;
+      }
+      .hbtn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .hbtn.danger:hover:not(:disabled) {
+        border-color: var(--err);
+        color: var(--err);
+      }
+      #present-hint {
+        display: none;
+        color: var(--faint);
+      }
+
       /* ====================== STAGE ====================== */
       #stage {
         position: relative;
@@ -173,8 +279,9 @@
         display: block;
         image-rendering: pixelated;
         cursor: crosshair;
+        object-fit: contain;
       }
-      /* faint CRT scanlines overlay */
+      /* faint CRT scanlines overlay (clean theme keeps this subtle) */
       #stage::after {
         content: "";
         position: absolute;
@@ -187,6 +294,73 @@
         );
         mix-blend-mode: multiply;
         opacity: 0.45;
+      }
+      /* CRT theme: heavier scanlines + phosphor glow + vignette */
+      body[data-theme="crt"] #stage::after {
+        opacity: 0.8;
+        background:
+          repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.28) 0 2px,
+            transparent 2px 4px
+          ),
+          radial-gradient(
+            ellipse at center,
+            transparent 58%,
+            rgba(0, 0, 0, 0.42) 100%
+          );
+      }
+      body[data-theme="crt"] #scene {
+        filter: saturate(1.25) contrast(1.08) brightness(1.05);
+      }
+      body[data-theme="crt"] #stage {
+        box-shadow:
+          0 0 24px rgba(79, 214, 190, 0.18),
+          inset 0 0 60px rgba(0, 0, 0, 0.55);
+        border-color: #2c3a46;
+      }
+      body[data-theme="night"] #stage {
+        box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.6);
+      }
+
+      #paused {
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: none;
+        z-index: 6;
+        font-family: var(--pixel);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: var(--warn);
+        background: rgba(10, 14, 19, 0.9);
+        border: 1px solid rgba(255, 209, 102, 0.6);
+        padding: 10px 16px;
+        animation: pulse 1.6s steps(2) infinite;
+        text-shadow: 2px 2px 0 #000;
+      }
+      #replaychip {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: none;
+        z-index: 6;
+        font-family: var(--pixel);
+        font-size: 8px;
+        letter-spacing: 0.16em;
+        color: var(--err);
+        background: rgba(10, 14, 19, 0.85);
+        border: 1px solid rgba(255, 107, 107, 0.55);
+        padding: 7px 10px;
+      }
+      #replaychip i {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: var(--err);
+        margin-right: 6px;
+        animation: pulse 1.2s steps(2) infinite;
       }
 
       #tip {
@@ -294,6 +468,50 @@
         letter-spacing: 0;
       }
 
+      /* ====================== replay bar ====================== */
+      #replaybar {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        margin: 0 26px 14px;
+        padding: 9px 12px;
+        border: 1px solid rgba(255, 107, 107, 0.4);
+        background: var(--panel);
+        font-family: var(--pixel);
+        font-size: 7px;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+      }
+      #replaybar .badge {
+        color: var(--err);
+        border: 1px solid rgba(255, 107, 107, 0.55);
+        padding: 5px 8px;
+        letter-spacing: 0.16em;
+      }
+      #replaybar input[type="range"] {
+        flex: 1;
+        min-width: 120px;
+        accent-color: var(--err);
+        height: 4px;
+        cursor: pointer;
+      }
+      #replaybar #rp-time {
+        color: var(--ink);
+        font-size: 9px;
+        min-width: 92px;
+        text-align: right;
+      }
+      #replaybar .epic {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0;
+        color: var(--dim);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 34vw;
+      }
+
       /* ====================== sprint board strip ====================== */
       #board {
         display: none;
@@ -340,6 +558,10 @@
       #board .bhead .ph.done {
         color: var(--ok);
         border-color: rgba(98, 209, 150, 0.4);
+      }
+      #board .bhead .ph.paused {
+        color: var(--warn);
+        border-color: rgba(255, 209, 102, 0.4);
       }
       #board .lanes {
         display: grid;
@@ -458,6 +680,39 @@
         margin-top: 4px;
         font-family: var(--pixel);
       }
+      #board .card .acts {
+        display: flex;
+        gap: 5px;
+        margin-top: 7px;
+        flex-wrap: wrap;
+      }
+      #board .card .act {
+        font-family: var(--pixel);
+        font-size: 6px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        background: #0a0e13;
+        border: 1px solid var(--line);
+        padding: 4px 6px;
+        cursor: pointer;
+      }
+      #board .card .act:hover:not(:disabled) {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+      #board .card .act.ok:hover:not(:disabled) {
+        color: var(--ok);
+        border-color: var(--ok);
+      }
+      #board .card .act.bad:hover:not(:disabled) {
+        color: var(--err);
+        border-color: var(--err);
+      }
+      #board .card .act:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
       @keyframes pgpulse {
         0%,
         100% {
@@ -477,6 +732,26 @@
         text-overflow: ellipsis;
       }
 
+      #toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 90;
+        display: none;
+        font-family: var(--pixel);
+        font-size: 8px;
+        letter-spacing: 0.1em;
+        color: var(--ink);
+        background: rgba(10, 14, 19, 0.95);
+        border: 1px solid var(--dev);
+        padding: 10px 14px;
+        box-shadow: 3px 3px 0 #000;
+      }
+      #toast.err {
+        border-color: var(--err);
+        color: #ffb3b3;
+      }
+
       footer {
         margin: 18px 26px 30px;
         color: var(--faint);
@@ -489,6 +764,56 @@
       }
       footer a:hover {
         color: var(--dev);
+      }
+
+      /* ====================== PRESENTATION MODE ====================== */
+      body.present header,
+      body.present #board,
+      body.present #banner,
+      body.present footer,
+      body.present #legend,
+      body.present #zonelabel {
+        display: none !important;
+      }
+      body.present {
+        overflow: hidden;
+      }
+      body.present #stage {
+        position: fixed;
+        inset: 0;
+        margin: 0;
+        border: none;
+        max-height: none;
+        aspect-ratio: auto;
+        z-index: 40;
+      }
+      body.present #hud {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 60;
+        margin: 0;
+        max-width: 94vw;
+        background: rgba(10, 14, 19, 0.88);
+        backdrop-filter: blur(4px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      }
+      body.present #hud .hbtn {
+        display: none;
+      }
+      body.present #present-hint {
+        display: inline;
+      }
+      body.present #replaybar {
+        position: fixed;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(820px, 94vw);
+        margin: 0;
+        z-index: 60;
+        background: rgba(10, 14, 19, 0.88);
       }
     </style>
   </head>
@@ -509,8 +834,35 @@
 
     <div id="banner"></div>
 
+    <div id="hud">
+      <span class="hcell">COST <b class="money" id="h-cost">—</b></span>
+      <span class="hcell"
+        >TOK IN <b id="h-tin">—</b> OUT <b id="h-tout">—</b></span
+      >
+      <span class="hcell">DONE <b class="good" id="h-done">—</b></span>
+      <span class="hcell">FAIL <b class="bad" id="h-fail">—</b></span>
+      <span class="hcell">T/HR <b id="h-tph">—</b></span>
+      <span class="hcell">ELAPSED <b id="h-elapsed">—</b></span>
+      <span class="hcell" id="h-budget" style="display: none"
+        >BUDGET <span class="bbar"><i id="h-bbar"></i></span>
+        <b id="h-btxt"></b></span
+      >
+      <span class="hsp"></span>
+      <span id="present-hint">ESC TO EXIT</span>
+      <button class="hbtn" id="btn-pause" disabled>PAUSE</button>
+      <button class="hbtn danger" id="btn-cancel" disabled>
+        CANCEL SPRINT
+      </button>
+      <button class="hbtn" id="btn-theme" title="cycle crt / clean / night">
+        THEME: CLEAN
+      </button>
+      <button class="hbtn" id="btn-present" title="key P">PRESENT</button>
+    </div>
+
     <div id="stage">
       <canvas id="scene" width="640" height="384"></canvas>
+      <div id="paused">⏸ PAUSED</div>
+      <div id="replaychip"><i></i>REPLAY</div>
       <div id="empty">
         <b>NO AGENTS ON FLOOR</b>
         Start a sprint to populate the office:<br />
@@ -531,6 +883,17 @@
         <span><i style="background: #ff6b6b"></i> FAILED</span>
       </div>
       <div id="zonelabel"><b>HOVER</b> an agent for details</div>
+    </div>
+
+    <div id="replaybar">
+      <span class="badge">REPLAY</span>
+      <button class="hbtn" id="rp-play">PAUSE</button>
+      <input type="range" id="rp-scrub" min="0" max="1000" value="0" />
+      <span id="rp-time">0:00 / 0:00</span>
+      <span class="epic" id="rp-epic"></span>
+      <a class="hbtn" id="rp-exit" href="?" style="text-decoration: none"
+        >EXIT</a
+      >
     </div>
 
     <div id="board">
@@ -564,9 +927,11 @@
       <div class="blog" id="bd-log">—</div>
     </div>
 
+    <div id="toast"></div>
+
     <footer>
       pixel office · same /api/state feed as <a href="/">/</a> · refresh ~2s ·
-      canvas 640×384, integer-scaled
+      canvas 640×384, integer-scaled · key P = presentation
     </footer>
 
     <script>
@@ -575,7 +940,15 @@
       // PIXEL OFFICE
       // 40×24 tile grid (16px logical → integer-scaled to container).
       // All art is procedural (fillRect) — no sprite sheets, no deps.
+      // Feature subsystems (HUD / controls / themes / present / replay) live in
+      // office-extras.js — loaded after this script, shares top-level bindings.
       // ============================================================================
+
+      // replay flag must exist BEFORE the first poll fires (extras boots later)
+      window.__replayMode = new URL(window.location.href).searchParams.has(
+        "replay"
+      );
+      window.__demoMode = false;
 
       const TILE = 16,
         COLS = 40,
@@ -585,6 +958,8 @@
       const cvs = document.getElementById("scene");
       const ctx = cvs.getContext("2d");
       ctx.imageSmoothingEnabled = false;
+      // ctxCur lets environment painters target the offscreen background canvas
+      let ctxCur = ctx;
 
       const P = {
         // floor
@@ -625,36 +1000,65 @@
         misc: "#7d8d99"
       };
 
-      // ---- zones (tile coordinates) -----------------------------------------------
+      // ---- rooms (tile coordinates) ----------------------------------------------
+      // PLANNING top-left · DEV PODS center · QA LAB right · BREAK AREA bottom.
+      // Each room gets its own floor tint (fA/fB checker pair) for tile variation.
       const ZONES = {
         planning: {
           x: 1,
           y: 1,
           w: 10,
-          h: 11,
-          label: "PM WAR ROOM",
-          color: P.plan
+          h: 16,
+          label: "PLANNING",
+          color: P.plan,
+          fA: "#1b2230",
+          fB: "#1f2737"
         },
         developer: {
           x: 12,
           y: 1,
           w: 15,
-          h: 22,
-          label: "DEV BULLPEN",
-          color: P.dev
+          h: 16,
+          label: "DEV PODS",
+          color: P.dev,
+          fA: "#13202b",
+          fB: "#172734"
         },
-        tester: { x: 28, y: 1, w: 11, h: 14, label: "QA LAB", color: P.test },
-        unassigned: { x: 1, y: 13, w: 10, h: 10, label: "LOBBY", color: P.misc }
+        tester: {
+          x: 28,
+          y: 1,
+          w: 11,
+          h: 16,
+          label: "QA LAB",
+          color: P.test,
+          fA: "#1d1a2b",
+          fB: "#221f33"
+        },
+        unassigned: {
+          x: 1,
+          y: 18,
+          w: 38,
+          h: 5,
+          label: "BREAK AREA",
+          color: P.misc,
+          fA: "#221c15",
+          fB: "#272019"
+        }
       };
+      // orch worker.room → zone key (fallback handled by teamOf)
+      const ROOM_ZONE = { planning: "planning", dev: "developer", qa: "tester" };
+
       // desks (tile coords) — top-down rectangle where the agent sits behind a monitor
       const DESKS = {
         planning: [
           [3, 3],
           [7, 3],
-          [3, 6],
-          [7, 6],
-          [3, 9],
-          [7, 9]
+          [3, 7],
+          [7, 7],
+          [3, 11],
+          [7, 11],
+          [3, 14],
+          [7, 14]
         ],
         developer: [
           [13, 3],
@@ -666,12 +1070,9 @@
           [13, 11],
           [17, 11],
           [21, 11],
-          [13, 15],
-          [17, 15],
-          [21, 15],
-          [13, 19],
-          [17, 19],
-          [21, 19]
+          [13, 14],
+          [17, 14],
+          [21, 14]
         ],
         tester: [
           [29, 3],
@@ -679,38 +1080,35 @@
           [29, 7],
           [33, 7],
           [29, 11],
-          [33, 11]
+          [33, 11],
+          [29, 14],
+          [33, 14]
         ],
-        unassigned: [
-          [3, 15],
-          [7, 15],
-          [3, 18],
-          [7, 18]
-        ]
+        unassigned: []
       };
-      // per-zone door (where a new hire walks in from)
+      // per-zone door mats (where a room opens onto the corridor / break area)
       const DOORS = {
-        planning: { x: 6, y: 11 },
-        developer: { x: 19, y: 23 },
-        tester: { x: 33, y: 14 },
-        unassigned: { x: 1, y: 18 }
+        planning: { x: 5, y: 17 },
+        developer: { x: 19, y: 17 },
+        tester: { x: 33, y: 17 },
+        unassigned: { x: 19, y: 18 }
       };
       // office entry door (centre-bottom of building)
-      const ENTRY = { tx: 6, ty: 22 };
-      // lobby couches — where agents go on break (6 spots across 2 rows so workers don't pile up)
+      const ENTRY = { tx: 19, ty: 22 };
+      // break-area couches — where agents go on break (spread across the bottom)
       const COUCHES = [
-        { tx: 2, ty: 14 },
-        { tx: 5, ty: 14 },
-        { tx: 8, ty: 14 },
-        { tx: 2, ty: 19 },
-        { tx: 5, ty: 19 },
-        { tx: 8, ty: 19 }
+        { tx: 3, ty: 19 },
+        { tx: 6, ty: 19 },
+        { tx: 9, ty: 19 },
+        { tx: 28, ty: 19 },
+        { tx: 31, ty: 19 },
+        { tx: 34, ty: 19 }
       ];
       // coffee machine + clock + whiteboard positions (decor)
       const DECOR = {
-        coffeeMachine: { x: 2 * TILE + 2, y: 13 * TILE + 4 },
-        clock: { x: 18 * TILE + 4, y: 1 * TILE + 9 }, // wall clock above PM/Dev divider
-        whiteboard: { x: 5 * TILE, y: 1 * TILE + 9 } // war room whiteboard
+        coffeeMachine: { x: 24 * TILE + 2, y: 19 * TILE + 2 },
+        clock: { x: 19 * TILE + 4, y: 1 * TILE + 9 }, // wall clock above dev pods
+        whiteboard: { x: 4 * TILE, y: 1 * TILE + 9 } // planning room whiteboard
       };
 
       // ---- sprite frames ----------------------------------------------------------
@@ -741,21 +1139,20 @@
           "..SSSS..",
           ".ATTTTA.",
           "ATTTTTTA",
-          "ATTTTTTA", // arms extended at desk-level
+          "ATTTTTTA",
           ".TTTTTT.",
           "..PPPP..",
           "..PPPP..",
           "..F..F.."
         ],
-        // typing frame B — visibly different: arms pulled back (hands lifted off keyboard)
-        // and head tilts left by one pixel for an obvious bob.
+        // typing frame B — arms tucked, head tilts left a pixel for an obvious bob
         type2: [
-          "..HHH...", // head shifted 1px left
+          "..HHH...",
           ".HHHHH..",
           ".HSSSH..",
           ".SEEES..",
           "..SSS...",
-          "..TTTT..", // arms tucked in
+          "..TTTT..",
           ".TTTTTT.",
           ".TTTTTT.",
           ".TTTTTT.",
@@ -764,7 +1161,6 @@
           "..F..F.."
         ],
         raised: [
-          // hands up (done) — both arms above head
           "A.HHHH.A",
           "AHHHHHHA",
           "AHSSSSHA",
@@ -779,12 +1175,11 @@
           "..F..F.."
         ],
         slump: [
-          // failed — slumped shoulders, head down
           "........",
           "..HHHH..",
           ".HHHHHH.",
           ".HSSSSH.",
-          ".SeeeeS.", // closed eyes
+          ".SeeeeS.",
           "..SSSS..",
           "ATTTTTTA",
           ".TTTTTT.",
@@ -793,7 +1188,6 @@
           "..PPPP..",
           "..F..F.."
         ],
-        // walking — frame A (right foot forward, left arm forward)
         walk: [
           "..HHHH..",
           ".HHHHHH.",
@@ -808,7 +1202,6 @@
           "..P..P..",
           "..F..F.."
         ],
-        // walking — frame B (left foot forward, right arm forward)
         walk2: [
           "..HHHH..",
           ".HHHHHH.",
@@ -823,7 +1216,6 @@
           "..P..P..",
           "..F..F.."
         ],
-        // sitting (couch — relaxed, legs out)
         sit: [
           "........",
           "..HHHH..",
@@ -835,10 +1227,9 @@
           "ATTTTTTA",
           ".TTTTTT.",
           ".PPPPPP.",
-          "PPPPPPPP", // legs stretched horizontally
+          "PPPPPPPP",
           "F......F"
         ],
-        // celebrate — leap with hands raised
         jump: [
           "A.HHHH.A",
           "AHHHHHHA",
@@ -851,7 +1242,7 @@
           "..PPPP..",
           "..PPPP..",
           "..F..F..",
-          "........" // feet off the ground
+          "........"
         ]
       };
       // blink overlay — substitute eye row (row 3) to look closed
@@ -874,7 +1265,6 @@
         };
       }
       function hairFor(seed) {
-        // deterministic hair color from agent id
         const colors = [
           "#3b2a1d",
           "#5a3a1f",
@@ -895,15 +1285,13 @@
 
       // ---- low-level draw helpers -------------------------------------------------
       function px(x, y, c) {
-        ctx.fillStyle = c;
-        ctx.fillRect(x | 0, y | 0, 1, 1);
+        ctxCur.fillStyle = c;
+        ctxCur.fillRect(x | 0, y | 0, 1, 1);
       }
       function rect(x, y, w, h, c) {
-        ctx.fillStyle = c;
-        ctx.fillRect(x | 0, y | 0, w, h);
+        ctxCur.fillStyle = c;
+        ctxCur.fillRect(x | 0, y | 0, w, h);
       }
-      // Each sprite "pixel" renders as a SCALE×SCALE block — bigger characters mean
-      // the 1-2px frame-to-frame movements actually read as motion.
       const SPRITE_SCALE = 2;
       function drawSprite(frame, x, y, pal, opts) {
         const arr = SPRITES[frame] || SPRITES.idle;
@@ -927,14 +1315,66 @@
         }
       }
 
+      // ---- theming (canvas side) --------------------------------------------------
+      // "night" dims architecture colors and lights a warm lamp at every desk.
+      // CSS handles the page chrome; office-extras.js calls applyCanvasTheme().
+      const P_DAY = Object.assign({}, P);
+      const ZONE_DAY = {};
+      for (const k of Object.keys(ZONES))
+        ZONE_DAY[k] = { fA: ZONES[k].fA, fB: ZONES[k].fB };
+      let THEME_NIGHT = false;
+      function dimHex(hex, f) {
+        const n = parseInt(hex.slice(1), 16);
+        const r = (((n >> 16) & 255) * f) | 0,
+          g = (((n >> 8) & 255) * f) | 0,
+          b = ((n & 255) * f) | 0;
+        return (
+          "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)
+        );
+      }
+      function applyCanvasTheme(name) {
+        THEME_NIGHT = name === "night";
+        const f = 0.55;
+        const dimKeys = [
+          "fA",
+          "fB",
+          "grout",
+          "wallTop",
+          "wallSide",
+          "wallShade",
+          "deskTop",
+          "deskSide",
+          "deskShade",
+          "rug",
+          "monitorOff"
+        ];
+        for (const k of dimKeys)
+          P[k] = THEME_NIGHT ? dimHex(P_DAY[k], f) : P_DAY[k];
+        for (const z of Object.keys(ZONES)) {
+          ZONES[z].fA = THEME_NIGHT ? dimHex(ZONE_DAY[z].fA, f) : ZONE_DAY[z].fA;
+          ZONES[z].fB = THEME_NIGHT ? dimHex(ZONE_DAY[z].fB, f) : ZONE_DAY[z].fB;
+        }
+        buildBackground();
+      }
+      window.applyCanvasTheme = applyCanvasTheme;
+
       // ---- environment ------------------------------------------------------------
+      function zoneAt(tx, ty) {
+        for (const k of Object.keys(ZONES)) {
+          const z = ZONES[k];
+          if (tx >= z.x && tx < z.x + z.w && ty >= z.y && ty < z.y + z.h)
+            return z;
+        }
+        return null;
+      }
       function drawFloor() {
-        // floor tile pattern — checker with grout
+        // per-room floor tint — checker with grout; corridor uses base palette
         for (let ty = 0; ty < ROWS; ty++) {
           for (let tx = 0; tx < COLS; tx++) {
-            const c = (tx + ty) & 1 ? P.fA : P.fB;
+            const z = zoneAt(tx, ty);
+            const c =
+              (tx + ty) & 1 ? (z ? z.fA : P.fA) : z ? z.fB : P.fB;
             rect(tx * TILE, ty * TILE, TILE, TILE, c);
-            // subtle grout pixels
             rect(tx * TILE, ty * TILE + TILE - 1, TILE, 1, P.grout);
             rect(tx * TILE + TILE - 1, ty * TILE, 1, TILE, P.grout);
           }
@@ -948,26 +1388,26 @@
         rect(W - 4, 0, 4, H, P.wallSide);
         rect(0, H - 2, W, 2, P.wallShade);
 
-        // zone dividers (low walls, half-height)
-        // between planning/lobby and developer
-        rect(11 * TILE + 6, 1 * TILE, 2, 22 * TILE, P.wallSide);
+        // vertical dividers: planning|dev and dev|qa (stop at the corridor)
+        rect(11 * TILE + 6, 1 * TILE, 2, 16 * TILE, P.wallSide);
         rect(11 * TILE + 6, 1 * TILE, 2, 2, P.wallTop);
-        // between developer and tester
-        rect(27 * TILE + 6, 1 * TILE, 2, 22 * TILE, P.wallSide);
+        rect(27 * TILE + 6, 1 * TILE, 2, 16 * TILE, P.wallSide);
         rect(27 * TILE + 6, 1 * TILE, 2, 2, P.wallTop);
-        // between planning and lobby (horizontal divider, shorter)
-        rect(1 * TILE, 12 * TILE + 6, 10 * TILE, 2, P.wallSide);
-        // between tester and QA lounge area
-        rect(28 * TILE, 15 * TILE + 6, 11 * TILE, 2, P.wallSide);
+        // horizontal divider above the break area, with three door gaps
+        const wy = 17 * TILE + 6;
+        rect(1 * TILE, wy, 4 * TILE, 2, P.wallSide); // 1..5
+        rect(7 * TILE, wy, 12 * TILE, 2, P.wallSide); // 7..19
+        rect(21 * TILE, wy, 12 * TILE, 2, P.wallSide); // 21..33
+        rect(35 * TILE, wy, 4 * TILE, 2, P.wallSide); // 35..39
 
-        // zone rugs (subtle floor accent under each zone)
+        // zone rugs (subtle floor accent under each room)
         drawRug(ZONES.planning);
         drawRug(ZONES.developer);
         drawRug(ZONES.tester);
         drawRug(ZONES.unassigned);
       }
       function drawRug(z) {
-        ctx.globalAlpha = 0.1;
+        ctxCur.globalAlpha = 0.1;
         rect(
           z.x * TILE + 4,
           z.y * TILE + 4,
@@ -975,48 +1415,36 @@
           z.h * TILE - 8,
           z.color
         );
-        ctx.globalAlpha = 1;
+        ctxCur.globalAlpha = 1;
       }
       function drawZoneLabels() {
-        ctx.font = "6px 'Press Start 2P', monospace";
-        ctx.textBaseline = "top";
-        ctx.fillStyle = P.faint;
-        // Planning
-        ctx.fillText(
-          "PM WAR ROOM",
-          ZONES.planning.x * TILE + 6,
-          ZONES.planning.y * TILE + 4
-        );
-        ctx.fillText(
-          "DEV BULLPEN",
-          ZONES.developer.x * TILE + 6,
-          ZONES.developer.y * TILE + 4
-        );
-        ctx.fillText(
-          "QA LAB",
-          ZONES.tester.x * TILE + 6,
-          ZONES.tester.y * TILE + 4
-        );
-        ctx.fillText(
-          "LOBBY",
-          ZONES.unassigned.x * TILE + 6,
-          ZONES.unassigned.y * TILE + 4
-        );
+        ctxCur.font = "6px 'Press Start 2P', monospace";
+        ctxCur.textBaseline = "top";
+        for (const k of Object.keys(ZONES)) {
+          const z = ZONES[k];
+          // tiny name plate behind the label so it reads on any floor tint
+          const wpx = z.label.length * 7 + 8;
+          ctxCur.globalAlpha = 0.55;
+          rect(z.x * TILE + 3, z.y * TILE + 2, wpx, 11, "#06090d");
+          ctxCur.globalAlpha = 1;
+          ctxCur.fillStyle = z.color;
+          ctxCur.globalAlpha = 0.8;
+          ctxCur.fillText(z.label, z.x * TILE + 7, z.y * TILE + 5);
+          ctxCur.globalAlpha = 1;
+        }
       }
 
-      // Plants — corners + lobby (kept clear of zone-label area)
+      // Plants — corners + break area (kept clear of label area)
       const PLANTS = [
         { x: 38 * TILE + 1, y: 1 * TILE + 3 },
         { x: 1 * TILE + 3, y: 22 * TILE - 2 },
         { x: 38 * TILE + 1, y: 22 * TILE - 2 },
-        { x: 8 * TILE + 10, y: 20 * TILE + 4 },
+        { x: 12 * TILE + 4, y: 20 * TILE + 4 },
         { x: 26 * TILE, y: 21 * TILE + 2 }
       ];
       function drawPlant(x, y) {
-        // pot
         rect(x + 1, y + 6, 5, 3, P.plantPot);
         rect(x + 0, y + 9, 7, 1, "#5a3a20");
-        // leaves
         rect(x + 1, y + 3, 5, 2, P.plant);
         rect(x + 0, y + 2, 7, 2, P.plantDark);
         rect(x + 2, y + 1, 3, 2, P.plant);
@@ -1026,43 +1454,50 @@
       function drawDesk(tx, ty) {
         const x = tx * TILE,
           y = ty * TILE;
-        // desk top: 3 tiles wide × 2 tiles tall
         rect(x, y + 14, TILE * 3, 4, P.deskTop);
         rect(x, y + 18, TILE * 3, 2, P.deskShade);
-        // desk legs
         rect(x + 2, y + 20, 2, 6, P.deskSide);
         rect(x + TILE * 3 - 4, y + 20, 2, 6, P.deskSide);
-        // monitor
         rect(x + TILE, y + 6, TILE + 4, 8, P.monitorBack);
         rect(x + TILE + 1, y + 7, TILE + 2, 5, P.monitorOff);
-        rect(x + TILE + 8, y + 14, 4, 1, P.monitorBack); // stand
-        // keyboard
+        rect(x + TILE + 8, y + 14, 4, 1, P.monitorBack);
         rect(x + TILE - 2, y + 15, TILE + 8, 2, "#0d1117");
-        // coffee cup
         rect(x + 2, y + 15, 3, 3, "#a06650");
         rect(x + 3, y + 14, 1, 1, "#c47a5e");
+        if (THEME_NIGHT) drawDeskLamp(tx, ty);
+      }
+      // night theme: a small desk lamp + warm pooled glow
+      function drawDeskLamp(tx, ty) {
+        const x = tx * TILE,
+          y = ty * TILE;
+        // glow pool (under the lamp, additive-ish layers)
+        ctxCur.globalAlpha = 0.09;
+        rect(x + 4, y + 2, TILE * 2 + 10, 18, "#ffb454");
+        ctxCur.globalAlpha = 0.07;
+        rect(x - 2, y - 2, TILE * 3 + 4, 26, "#ffd166");
+        ctxCur.globalAlpha = 1;
+        // lamp fixture on the right desk edge
+        rect(x + TILE * 2 + 8, y + 9, 2, 6, "#46555f");
+        rect(x + TILE * 2 + 6, y + 7, 6, 3, "#ffd166");
+        px(x + TILE * 2 + 8, y + 10, "#fff2c4");
       }
       function drawDeskScreenOn(tx, ty, tint) {
         const x = tx * TILE,
           y = ty * TILE;
         rect(x + TILE + 1, y + 7, TILE + 2, 5, tint || P.monitorOn);
-        // a couple flickering glyph pixels
         rect(x + TILE + 2, y + 9, 1, 1, "#7df0c6");
         rect(x + TILE + 5, y + 10, 1, 1, "#7df0c6");
         rect(x + TILE + 8, y + 9, 1, 1, "#ffd166");
       }
 
-      // ---- lobby couches & break-area furniture ----------------------------------
+      // ---- break-area furniture ---------------------------------------------------
       function drawCouch(tx, ty) {
         const x = tx * TILE,
           y = ty * TILE;
-        // back cushion
         rect(x + 1, y + 4, TILE - 2, 5, "#3a4655");
         rect(x + 1, y + 4, TILE - 2, 1, "#4a5868");
-        // seat
         rect(x, y + 9, TILE, 5, "#4a5868");
         rect(x, y + 13, TILE, 1, "#2a323e");
-        // armrests
         rect(x, y + 5, 2, 9, "#2a323e");
         rect(x + TILE - 2, y + 5, 2, 9, "#2a323e");
       }
@@ -1073,49 +1508,82 @@
         rect(x, y + 11, TILE * 2, 1, "#3b2e23");
         rect(x + 2, y + 12, 2, 3, "#3b2e23");
         rect(x + TILE * 2 - 4, y + 12, 2, 3, "#3b2e23");
-        // mug on the table
         rect(x + 6, y + 5, 3, 3, "#a06650");
-        rect(x + 7, y + 4, 1, 1, "#c47a5e"); // steam dot
+        rect(x + 7, y + 4, 1, 1, "#c47a5e");
       }
       function drawCoffeeMachine(x, y) {
-        // body
         rect(x, y, 10, 14, "#222831");
-        rect(x + 1, y + 1, 8, 4, "#0d1117"); // top reservoir glass
-        rect(x + 2, y + 2, 6, 2, "#3a2418"); // coffee
-        // dispenser
+        rect(x + 1, y + 1, 8, 4, "#0d1117");
+        rect(x + 2, y + 2, 6, 2, "#3a2418");
         rect(x + 3, y + 8, 4, 3, "#71828e");
-        rect(x + 4, y + 11, 2, 2, "#a06650"); // cup
-        // little led
+        rect(x + 4, y + 11, 2, 2, "#a06650");
         rect(x + 8, y + 6, 1, 1, "#62d196");
       }
       function drawClock(x, y, t) {
-        // clock face
         rect(x - 1, y - 1, 12, 12, "#1a232e");
         rect(x, y, 10, 10, "#d9e3e9");
-        // tick marks (12, 3, 6, 9)
         rect(x + 4, y + 1, 2, 1, "#0d1117");
         rect(x + 8, y + 4, 1, 2, "#0d1117");
         rect(x + 4, y + 8, 2, 1, "#0d1117");
         rect(x + 1, y + 4, 1, 2, "#0d1117");
-        // hour hand — rotates with sprint duration
         const secs = (t / 1000) % 60;
         const ang = (secs / 60) * Math.PI * 2 - Math.PI / 2;
         const hx = x + 5 + Math.cos(ang) * 3;
         const hy = y + 5 + Math.sin(ang) * 3;
         rect(hx - 1, hy - 1, 2, 2, "#0d1117");
-        // pivot dot
         rect(x + 4, y + 4, 2, 2, "#ff6b6b");
       }
       function drawWhiteboard(x, y) {
         rect(x - 1, y - 1, 28, 12, "#71828e");
         rect(x, y, 26, 10, "#f0efe9");
-        // scrawled lines
         rect(x + 2, y + 2, 8, 1, "#2c8db8");
         rect(x + 2, y + 4, 14, 1, "#2c8db8");
         rect(x + 2, y + 6, 6, 1, "#ff6b6b");
         rect(x + 10, y + 6, 10, 1, "#ff6b6b");
         rect(x + 2, y + 8, 18, 1, "#62d196");
       }
+
+      // ---- static background cache --------------------------------------------
+      // Everything that never moves (floor, walls, labels, desks, furniture) is
+      // pre-rendered once per theme to an offscreen canvas and blitted per frame.
+      const bg = document.createElement("canvas");
+      bg.width = W;
+      bg.height = H;
+      const bctx = bg.getContext("2d");
+      function buildBackground() {
+        ctxCur = bctx;
+        drawFloor();
+        drawWalls();
+        for (const p of PLANTS) drawPlant(p.x, p.y);
+        for (const c of COUCHES) drawCouch(c.tx, c.ty);
+        drawCoffeeTable(13, 19);
+        drawCoffeeTable(36, 19);
+        drawCoffeeMachine(DECOR.coffeeMachine.x, DECOR.coffeeMachine.y);
+        drawWhiteboard(DECOR.whiteboard.x, DECOR.whiteboard.y);
+        // entry door (centre-bottom)
+        rect(ENTRY.tx * TILE + 2, ENTRY.ty * TILE - 2, TILE - 4, 4, "#3a2418");
+        rect(
+          ENTRY.tx * TILE + 4,
+          ENTRY.ty * TILE + 12,
+          TILE - 8,
+          3,
+          "#1c2a37"
+        );
+        // per-room door mats
+        for (const k of Object.keys(DOORS)) {
+          const d = DOORS[k];
+          rect(d.x * TILE + 4, d.y * TILE + 12, 8, 3, "#2c3845");
+        }
+        // desks per room
+        for (const team of Object.keys(DESKS))
+          for (const td of DESKS[team]) drawDesk(td[0], td[1]);
+        drawZoneLabels();
+        ctxCur = ctx;
+      }
+      buildBackground();
+      // rebuild once the pixel font finishes loading so labels render crisp
+      if (document.fonts && document.fonts.ready)
+        document.fonts.ready.then(buildBackground);
 
       // ---- agents -----------------------------------------------------------------
       // Logical sprite is 8×12, drawn at SPRITE_SCALE (2) → 16×24 on the canvas.
@@ -1130,18 +1598,17 @@
         t: 0,
         spawnedAt: 0,
         paused: false,
-        confetti: [] // {x,y,vx,vy,color,life}
+        confetti: [], // {x,y,vx,vy,color,life}
+        prevTaskStates: null // Map(taskId → state) for handoff detection
       };
 
       function deskCenterPx(tx, ty) {
-        // standing behind desk — feet just above the desktop edge
         return {
           x: tx * TILE + (TILE * 3) / 2 - AGENT_W / 2,
           y: ty * TILE + 16 - AGENT_H
         };
       }
       function couchPx(tx, ty) {
-        // sitting on couch — feet on the floor in front
         return { x: tx * TILE + (TILE - AGENT_W) / 2, y: ty * TILE + 4 };
       }
       function doorPx() {
@@ -1152,7 +1619,9 @@
       }
 
       function assignDesk(team, idx) {
-        const desks = DESKS[team] || DESKS.developer;
+        const desks = DESKS[team] && DESKS[team].length
+          ? DESKS[team]
+          : DESKS.developer;
         const [tx, ty] = desks[idx % desks.length];
         return { tx, ty, ...deskCenterPx(tx, ty) };
       }
@@ -1163,13 +1632,18 @@
 
       // Where should an agent be, given its current status?
       function targetFor(a) {
+        // errands (walk handoff / handback) trump everything else
+        if (a.errand) {
+          if (state.t < a.errand.until)
+            return { x: a.errand.x, y: a.errand.y, where: "errand" };
+          a.errand = null;
+        }
         if (!a.assignedDesk) return a.entryPos;
         switch (a.status) {
           case "working":
           case "needs_input":
             return { x: a.assignedDesk.x, y: a.assignedDesk.y, where: "desk" };
           case "completed":
-            // celebrate at desk for CELEBRATE_MS, then go on break
             if (a.celebrateUntil && state.t < a.celebrateUntil)
               return {
                 x: a.assignedDesk.x,
@@ -1196,29 +1670,24 @@
 
       function statusFrame(a, t, seed) {
         if (a.walking) return ((t + seed * 53) >> 7) & 1 ? "walk" : "walk2";
-        if (
-          a.status === "completed" &&
-          a.celebrateUntil &&
-          t < a.celebrateUntil
-        )
-          return "jump";
+        if (a.celebrateUntil && t < a.celebrateUntil) return "jump";
+        if (a.errand) return "idle"; // standing mid-handoff
         if (a.atCouch) return "sit";
+        if (a.visualIdleUntil && t < a.visualIdleUntil) return "idle"; // QA waits for the handoff walk
         if (a.status === "working")
           return ((t + seed * 53) >> 7) & 1 ? "type" : "type2";
         if (a.status === "needs_input") return "idle";
-        if (a.status === "completed") return "sit"; // resting after celebration
+        if (a.status === "completed") return "sit";
         if (a.status === "failed") return "slump";
         if (a.status === "stopped") return "idle";
         return "idle";
       }
-      // Blink every ~3s for ~120ms — staggered per agent seed.
       function isBlinking(t, seed) {
         return (t + seed * 137) % 3000 < 120;
       }
-      // Idle breathing — 1-2px bob on a ~1.4s cycle.
       function bobY(t, seed, a) {
         if (a.status === "failed") return 0;
-        if (a.walking) return ((t + seed * 53) >> 7) & 1 ? -1 : 0; // tiny gait bounce
+        if (a.walking) return ((t + seed * 53) >> 7) & 1 ? -1 : 0;
         if (a.atCouch) return 0;
         const s = Math.sin((t + seed * 211) / 600);
         if (a.status === "working") return s > 0 ? -1 : 0;
@@ -1268,7 +1737,7 @@
           p.life -= dt;
           p.x += (p.vx * dt) / 1000;
           p.y += (p.vy * dt) / 1000;
-          p.vy += (120 * dt) / 1000; // gravity
+          p.vy += (120 * dt) / 1000;
         }
         state.confetti = state.confetti.filter((p) => p.life > 0);
       }
@@ -1281,18 +1750,96 @@
         ctx.globalAlpha = 1;
       }
 
+      // ---- walk handoff (dev → qa → dev) -------------------------------------
+      // Triggered by sprint-board task-state transitions diffed across polls.
+      function findAgentForTask(taskId, zone) {
+        const re = new RegExp(
+          "\\b" + String(taskId).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b",
+          "i"
+        );
+        let working = null,
+          fallback = null;
+        for (const a of state.agents.values()) {
+          if (a.team !== zone) continue;
+          if (re.test(a.name) || re.test(a.summary || "")) return a;
+          if (!working && a.status === "working") working = a;
+          if (!fallback) fallback = a;
+        }
+        return working || fallback;
+      }
+      function walkMsTo(a, x, y) {
+        return (Math.hypot(x - a.x, y - a.y) / WALK_SPEED) * 1000;
+      }
+      // dev finished a task → it walks the work over to the QA LAB; the QA
+      // sprite visibly waits (idle) until the dev arrives, then starts testing.
+      function startHandoff(taskId) {
+        const dev = findAgentForTask(taskId, "developer");
+        const qa = findAgentForTask(taskId, "tester");
+        if (!dev) return;
+        const spot = qa
+          ? { x: qa.assignedDesk.x - 22, y: qa.assignedDesk.y + 2 }
+          : { x: 28 * TILE + 6, y: 8 * TILE };
+        const ms = walkMsTo(dev, spot.x, spot.y);
+        dev.errand = { x: spot.x, y: spot.y, until: state.t + ms + 1400 };
+        if (qa) qa.visualIdleUntil = state.t + ms;
+      }
+      // QA passed → both the dev and the QA celebrate (hop + confetti)
+      function celebrateHandoff(taskId) {
+        const dev = findAgentForTask(taskId, "developer");
+        const qa = findAgentForTask(taskId, "tester");
+        for (const a of [dev, qa]) {
+          if (!a) continue;
+          a.errand = null;
+          a.celebrateUntil = state.t + CELEBRATE_MS;
+          spawnConfetti(a.x + AGENT_W / 2, a.y + 4);
+        }
+      }
+      // QA failed → the QA sprite walks the task back to the dev pod
+      function startHandback(taskId) {
+        const dev = findAgentForTask(taskId, "developer");
+        const qa = findAgentForTask(taskId, "tester");
+        if (!qa) return;
+        const spot = dev
+          ? { x: dev.assignedDesk.x + 22, y: dev.assignedDesk.y + 2 }
+          : { x: 19 * TILE, y: 8 * TILE };
+        const ms = walkMsTo(qa, spot.x, spot.y);
+        qa.errand = { x: spot.x, y: spot.y, until: state.t + ms + 1400 };
+      }
+      // diff board states between polls and fire the right animation
+      function detectHandoffs(board, first) {
+        if (!Array.isArray(board)) {
+          state.prevTaskStates = null;
+          return;
+        }
+        const prev = state.prevTaskStates;
+        if (prev && !first) {
+          for (const t of board) {
+            if (!t || !t.id) continue;
+            const was = prev.get(t.id);
+            if (!was || was === t.state) continue;
+            if (was === "dev" && t.state === "qa") startHandoff(t.id);
+            else if (was === "qa" && t.state === "done")
+              celebrateHandoff(t.id);
+            else if (was === "qa" && (t.state === "failed" || t.state === "dev"))
+              startHandback(t.id);
+          }
+        }
+        state.prevTaskStates = new Map(board.map((t) => [t.id, t.state]));
+      }
+
       // Lifelike reaction bubbles — animated content per status.
       function reactionFor(a, t) {
-        if (a.walking) return null;
+        if (a.walking)
+          return a.errand ? { kind: "text", text: ">", color: P.dim } : null;
         if (a.celebrateUntil && t < a.celebrateUntil)
           return { kind: "star", color: P.ok };
+        if (a.errand) return { kind: "text", text: ">", color: P.dim };
         switch (a.status) {
-          case "working":
-            // cycle dots: ".", "..", "..."
+          case "working": {
             const n = (Math.floor(t / 350) % 3) + 1;
             return { kind: "text", text: ".".repeat(n), color: P.dim };
+          }
           case "needs_input":
-            // alternating ? and ! to convey "waiting on you"
             return {
               kind: "text",
               text: ((t / 600) | 0) & 1 ? "?" : "!",
@@ -1319,7 +1866,6 @@
         const drift = kind.drift ? Math.sin(t / 400) * 2 : 0;
         const yy = y + bob;
         if (kind.kind === "star") {
-          // 5-point sparkle (no bubble) — bursts upward
           const dy = ((t / 120) | 0) % 4;
           rect(x + 3, yy - 6 - dy, 2, 2, kind.color);
           rect(x + 1, yy - 3 - dy, 1, 1, "#ffd166");
@@ -1327,7 +1873,6 @@
           rect(x + 3, yy - 1 - dy, 1, 1, "#ffd166");
           return;
         }
-        // bubble
         rect(x, yy - 7, 9, 7, "#0a0e13");
         for (let i = 0; i < 9; i++) {
           px(x + i, yy - 7, P.ink);
@@ -1342,7 +1887,6 @@
         ctx.fillStyle = kind.color;
         ctx.textBaseline = "top";
         ctx.fillText(kind.text, x + 2 + drift, yy - 6);
-        // sweat drop next to bubble for failed
         if (kind.sweat) {
           const wob = (Math.sin(t / 180) * 1) | 0;
           rect(x + 10, yy - 4 + wob, 2, 3, "#56b6ff");
@@ -1357,21 +1901,16 @@
         pal.seed = a.id;
         a.frame = statusFrame(a, state.t, seed);
         const dy = bobY(state.t, seed, a) * SPRITE_SCALE;
-        // celebrate also bounces vertically (extra hop)
         let hop = 0;
         if (a.celebrateUntil && state.t < a.celebrateUntil) {
           hop = -Math.abs(Math.sin((state.t * Math.PI) / 200) * 6) | 0;
         }
         const blink = isBlinking(state.t, seed);
-        // shadow (stays put when sprite bobs)
         ctx.globalAlpha = 0.35;
         rect(a.x, a.y + AGENT_H, AGENT_W, 2, "#000");
         ctx.globalAlpha = 1;
-        // sprite (with horizontal flip when facing left)
         if (a.facing === "left") {
           ctx.save();
-          // Flip around the sprite's vertical centerline: translate to right edge,
-          // scale x by -1, then draw at -AGENT_W offset so it lands in the same box.
           ctx.translate(a.x + AGENT_W, 0);
           ctx.scale(-1, 1);
           drawSprite(a.frame, 0, a.y + dy + hop, pal, { blink });
@@ -1379,13 +1918,22 @@
         } else {
           drawSprite(a.frame, a.x, a.y + dy + hop, pal, { blink });
         }
+        // carried "work" folder while on a handoff errand
+        if (a.errand || (a.walking && a.errandCarry)) {
+          const fx = a.facing === "left" ? a.x - 3 : a.x + AGENT_W - 2;
+          rect(fx, a.y + dy + hop + 12, 5, 4, "#e8d28a");
+          rect(fx, a.y + dy + hop + 12, 5, 1, "#b9a55d");
+        }
         // type sparkle (only while actually typing at desk)
-        if (a.status === "working" && a.atDesk) {
+        if (
+          a.status === "working" &&
+          a.atDesk &&
+          !(a.visualIdleUntil && state.t < a.visualIdleUntil)
+        ) {
           const sparkX = a.tx * TILE + TILE + 2 + (((state.t / 120) | 0) % 9);
           px(sparkX, a.ty * TILE + 5, "#7df0c6");
           if (a.frame === "type") px(sparkX + 2, a.ty * TILE + 4, "#ffd166");
         }
-        // reaction bubble
         drawReactionBubble(
           a.x + AGENT_W / 2 - 4,
           a.y + dy + hop - 2,
@@ -1421,10 +1969,21 @@
         if (!data || !data.sessions) {
           state.agents.clear();
           state.orch = null;
+          state.prevTaskStates = null;
           document.getElementById("empty").style.display = "flex";
+          if (window.OfficeExtras) window.OfficeExtras.onState(data || {});
           return;
         }
-        // Map by team to assign desk index
+        window.__demoMode = !!data.demo;
+        const firstIngest = !hasIngestedOnce;
+        // room assignment: prefer the orchestrator worker.room, fallback to team
+        const workerRoom = {};
+        if (data.orch && Array.isArray(data.orch.workers)) {
+          for (const w of data.orch.workers)
+            if (w && w.id && w.room && ROOM_ZONE[w.room])
+              workerRoom[w.id] = ROOM_ZONE[w.room];
+        }
+        // Map by room/team to assign desk index
         const byTeam = {
           planning: [],
           developer: [],
@@ -1432,7 +1991,7 @@
           unassigned: []
         };
         for (const s of data.sessions) {
-          const team = teamOf(s);
+          const team = workerRoom[s.id] || teamOf(s);
           byTeam[team] ||= [];
           byTeam[team].push(s);
         }
@@ -1448,15 +2007,8 @@
                 : assignDesk(team, idx);
             const couch = assignCouch(couchIdx++);
             const newStatus = s.status || "idle";
-            // Detect completion transition → trigger celebration. Two
-            // conditions are required so the celebration only fires on a TRUE
-            // status change inside this browser session:
-            //  - hasIngestedOnce: don't celebrate on the very first ingest
-            //    (the page just opened in the middle of a sprint — every
-            //    already-completed agent should NOT all confetti-burst at
-            //    once).
-            //  - prev exists with non-"completed" status: the agent actually
-            //    transitioned from working/qa/etc. to completed.
+            // Detect completion transition → trigger celebration (see notes in
+            // git history: only on a TRUE status change inside this session).
             let celebrateUntil = prev ? prev.celebrateUntil : 0;
             if (
               newStatus === "completed" &&
@@ -1465,13 +2017,10 @@
               prev.status !== "completed"
             ) {
               celebrateUntil = state.t + CELEBRATE_MS;
-              const sx = prev.x + AGENT_W / 2;
-              const sy = prev.y + 4;
-              spawnConfetti(sx, sy);
+              spawnConfetti(prev.x + AGENT_W / 2, prev.y + 4);
             }
-            // New agent? On the first ingest, snap to target so we don't have a
-            // simultaneous stampede across the floor. On later ingests, NEW
-            // sessions spawn at the entry door and walk in.
+            // New agent? First ingest snaps to target (no stampede); afterwards
+            // new sessions spawn at the entry door and walk in.
             const entry = doorPx();
             const tgtX =
               newStatus === "idle" || newStatus === "stopped"
@@ -1508,6 +2057,9 @@
                 ? prev.atCouch
                 : !hasIngestedOnce && tgtX === couch.x,
               celebrateUntil,
+              // handoff continuity across polls
+              errand: prev ? prev.errand : null,
+              visualIdleUntil: prev ? prev.visualIdleUntil : 0,
               frame: "idle"
             };
             next.set(s.id, a);
@@ -1515,6 +2067,9 @@
         }
         state.agents = next;
         state.orch = data.orch || null;
+
+        // walk handoffs from board transitions (tolerates orch absent)
+        detectHandoffs(state.orch && state.orch.board, firstIngest);
         hasIngestedOnce = true;
 
         // header stats
@@ -1560,6 +2115,9 @@
 
         // sprint board
         renderBoard(state.orch);
+
+        // feature subsystems (HUD, controls, paused overlay…)
+        if (window.OfficeExtras) window.OfficeExtras.onState(data);
       }
 
       function escapeHtml(s) {
@@ -1576,6 +2134,31 @@
         );
       }
 
+      // per-task control buttons (Retry / Force pass / Force fail) — wired to
+      // POST /api/control by office-extras.js via event delegation on #board.
+      function taskButtons(t) {
+        if (window.__replayMode) return "";
+        const dis = window.__demoMode
+          ? ' disabled title="demo"'
+          : ' title="POST /api/control"';
+        const id = escapeHtml(t.id || "");
+        const b = [];
+        const st = t.state;
+        if (st === "failed" || st === "cancelled")
+          b.push(
+            `<button class="act" data-act="retry" data-task="${id}"${dis}>RETRY</button>`
+          );
+        if (st === "dev" || st === "qa" || st === "failed")
+          b.push(
+            `<button class="act ok" data-act="force-pass" data-task="${id}"${dis}>FORCE PASS</button>`
+          );
+        if (st === "planned" || st === "dev" || st === "qa")
+          b.push(
+            `<button class="act bad" data-act="force-fail" data-task="${id}"${dis}>FORCE FAIL</button>`
+          );
+        return b.length ? `<div class="acts">${b.join("")}</div>` : "";
+      }
+
       function renderBoard(orch) {
         const el = document.getElementById("board");
         if (!orch || !orch.board || !orch.board.length) {
@@ -1585,32 +2168,47 @@
         el.style.display = "block";
         document.getElementById("bd-epic").textContent = orch.epic || "—";
         const phEl = document.getElementById("bd-phase");
-        phEl.textContent = (orch.phase || "idle").toUpperCase();
+        phEl.textContent = orch.paused
+          ? "PAUSED"
+          : (orch.phase || "idle").toUpperCase();
         phEl.className =
-          "ph " + (orch.active ? "run" : orch.phase === "done" ? "done" : "");
+          "ph " +
+          (orch.paused
+            ? "paused"
+            : orch.active
+              ? "run"
+              : orch.phase === "done"
+                ? "done"
+                : "");
 
         const lanes = { planned: [], dev: [], qa: [], done: [], failed: [] };
         for (const t of orch.board) {
-          const s = t.state || "planned";
-          (lanes[s] || lanes.planned).push(t);
+          const s = lanes[t.state]
+            ? t.state
+            : t.state === "cancelled"
+              ? "failed"
+              : "planned";
+          lanes[s].push(t);
         }
         const stageLabel = {
           planned: "queued",
           dev: "building",
           qa: "verifying",
           done: "shipped",
-          failed: "failed"
+          failed: "failed",
+          cancelled: "cancelled"
         };
         for (const k of Object.keys(lanes)) {
           document.getElementById("bd-c-" + k).textContent = lanes[k].length;
           document.getElementById("lane-" + k).innerHTML = lanes[k]
             .map(
               (t) =>
-                `<div class="card ${k}">` +
+                `<div class="card ${t.state === "cancelled" ? "failed" : k}">` +
                 `<div class="id">${escapeHtml(t.id || "")}${t.retries ? ` · ↻${t.retries}` : ""}</div>` +
                 `<span class="ti">${escapeHtml(t.title || "")}</span>` +
                 `<div class="pg"><i></i></div>` +
-                `<div class="stg">${stageLabel[k] || k}</div>` +
+                `<div class="stg">${stageLabel[t.state] || stageLabel[k] || k}</div>` +
+                taskButtons(t) +
                 `</div>`
             )
             .join("");
@@ -1626,37 +2224,18 @@
         last = now;
         state.t += dt;
 
-        // env
-        drawFloor();
-        drawWalls();
-        drawZoneLabels();
-        for (const p of PLANTS) drawPlant(p.x, p.y);
-
-        // decor: lobby couches + coffee table + coffee machine + clock + whiteboard
-        for (const c of COUCHES) drawCouch(c.tx, c.ty);
-        drawCoffeeTable(4, 16);
-        drawCoffeeMachine(DECOR.coffeeMachine.x, DECOR.coffeeMachine.y);
+        // static environment (pre-rendered per theme)
+        ctx.drawImage(bg, 0, 0);
+        // animated decor
         drawClock(DECOR.clock.x, DECOR.clock.y, state.t);
-        drawWhiteboard(DECOR.whiteboard.x, DECOR.whiteboard.y);
-
-        // entry door (centre-bottom)
-        rect(ENTRY.tx * TILE + 2, ENTRY.ty * TILE - 2, TILE - 4, 4, "#3a2418");
-        rect(ENTRY.tx * TILE + 4, ENTRY.ty * TILE + 12, TILE - 8, 3, "#1c2a37");
-        // per-zone interior doors (mat)
-        for (const k of Object.keys(DOORS)) {
-          const d = DOORS[k];
-          rect(d.x * TILE + 4, d.y * TILE + 12, 8, 3, "#2c3845");
-        }
-
-        // desks per zone
-        for (const team of Object.keys(DESKS)) {
-          if (team === "unassigned") continue; // lobby has couches, not desks
-          for (const [tx, ty] of DESKS[team]) drawDesk(tx, ty);
-        }
 
         // light up the monitors of working/typing agents (only when at desk)
         for (const a of state.agents.values()) {
-          if (a.status === "working" && a.atDesk) {
+          if (
+            a.status === "working" &&
+            a.atDesk &&
+            !(a.visualIdleUntil && state.t < a.visualIdleUntil)
+          ) {
             drawDeskScreenOn(
               a.tx,
               a.ty,
@@ -1684,19 +2263,28 @@
       }
 
       // ---- interaction: hover tooltip --------------------------------------------
+      // Mapping is letterbox-aware (canvas uses object-fit: contain so
+      // presentation mode keeps the pixel aspect with no distortion).
       const tip = document.getElementById("tip");
       const zonelabel = document.getElementById("zonelabel");
-      function pickAt(px, py) {
-        // px,py are in CSS px relative to the canvas. Translate to logical px.
-        const rect = cvs.getBoundingClientRect();
-        const lx = (px - rect.left) * (W / rect.width);
-        const ly = (py - rect.top) * (H / rect.height);
+      function toLogical(clientX, clientY) {
+        const r = cvs.getBoundingClientRect();
+        const scale = Math.min(r.width / W, r.height / H);
+        const ox = (r.width - W * scale) / 2;
+        const oy = (r.height - H * scale) / 2;
+        return {
+          x: (clientX - r.left - ox) / scale,
+          y: (clientY - r.top - oy) / scale
+        };
+      }
+      function pickAt(cx, cy) {
+        const l = toLogical(cx, cy);
         for (const a of state.agents.values()) {
           if (
-            lx >= a.x - 2 &&
-            lx <= a.x + AGENT_W + 2 &&
-            ly >= a.y - 2 &&
-            ly <= a.y + AGENT_H + 2
+            l.x >= a.x - 2 &&
+            l.x <= a.x + AGENT_W + 2 &&
+            l.y >= a.y - 2 &&
+            l.y <= a.y + AGENT_H + 2
           ) {
             return a;
           }
@@ -1720,11 +2308,9 @@
       });
 
       function updateZoneLabel(e) {
-        const r = cvs.getBoundingClientRect();
-        const lx = (e.clientX - r.left) * (W / r.width);
-        const ly = (e.clientY - r.top) * (H / r.height);
-        const ztx = lx / TILE,
-          zty = ly / TILE;
+        const l = toLogical(e.clientX, e.clientY);
+        const ztx = l.x / TILE,
+          zty = l.y / TILE;
         for (const k of Object.keys(ZONES)) {
           const z = ZONES[k];
           if (ztx >= z.x && ztx < z.x + z.w && zty >= z.y && zty < z.y + z.h) {
@@ -1737,6 +2323,7 @@
 
       // ---- bootstrap --------------------------------------------------------------
       async function poll() {
+        if (window.__replayMode) return; // replay feeds ingest() itself
         const data = await fetchState();
         ingest(data);
       }
@@ -1749,5 +2336,6 @@
         state.paused = document.hidden;
       });
     </script>
+    <script src="office-extras.js"></script>
   </body>
 </html>

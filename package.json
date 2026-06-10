@@ -1,6 +1,6 @@
 {
   "name": "pixel-agent-office",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A live pixel-art office where a team of Claude Code agents (PM → developers → QA) builds your project.",
   "type": "commonjs",
   "bin": {
@@ -10,8 +10,8 @@
   "scripts": {
     "start": "node start.js",
     "office": "node server.js",
-    "demo": "node server.js",
-    "dry-run": "node orchestrate.js --epic ./examples/sample-epic.md --dry-run"
+    "dry-run": "node orchestrate.js --epic ./examples/sample-epic.md --dry-run",
+    "smoke": "node --check orchestrate.js && node --check server.js && node orchestrate.js --epic ./examples/sample-epic.md --dry-run"
   },
   "keywords": [
     "claude",

@@ -80,6 +80,7 @@ header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 26px
 #board .card.qa{border-left-color:var(--test)}
 #board .card.done{border-left-color:var(--ok);opacity:.85}
 #board .card.failed{border-left-color:var(--err)}
+#board .card.cancelled{border-left-color:var(--warn);opacity:.7}
 #board .card .pg{height:3px;border-radius:2px;background:#1a232b;margin-top:7px;overflow:hidden}
 #board .card .pg i{display:block;height:100%;border-radius:2px;background:var(--faint);transition:width .5s ease}
 #board .card.planned .pg i{width:8%;background:var(--idle)}
@@ -87,6 +88,7 @@ header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 26px
 #board .card.qa .pg i{width:76%;background:var(--test);animation:pgpulse 1.6s ease-in-out infinite}
 #board .card.done .pg i{width:100%;background:var(--ok)}
 #board .card.failed .pg i{width:100%;background:var(--err)}
+#board .card.cancelled .pg i{width:100%;background:var(--warn)}
 #board .card .stg{font-size:8.5px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-top:4px;font-family:var(--disp)}
 @keyframes pgpulse{0%,100%{opacity:1}50%{opacity:.55}}
 #board .blog{padding:9px 16px;border-top:1px solid var(--line);color:var(--faint);font-size:10.5px;
@@ -636,7 +638,7 @@ const LANES=[
   {key:'dev',     label:'In Dev',   match:t=>t.state==='dev'},
   {key:'qa',      label:'In QA',    match:t=>t.state==='qa'},
   {key:'done',    label:'Shipped',  match:t=>t.state==='done'},
-  {key:'failed',  label:'Failed',   match:t=>t.state==='failed'},
+  {key:'failed',  label:'Failed',   match:t=>t.state==='failed'||t.state==='cancelled'},
 ];
 function renderBoard(){
   const el=document.getElementById('board');
@@ -648,7 +650,7 @@ function renderBoard(){
   ph.className='ph '+(orch.phase==='done'?'done':orch.active?'run':'');
   document.getElementById('board-lanes').innerHTML=LANES.map(L=>{
     const cards=orch.board.filter(L.match);
-    const STG={planned:'Queued',dev:'Developing',qa:'Verifying',done:'Shipped',failed:'Failed'};
+    const STG={planned:'Queued',dev:'Developing',qa:'Verifying',done:'Shipped',failed:'Failed',cancelled:'Cancelled'};
     const inner=cards.map(t=>`
       <div class="card ${esc(t.state)}">
         <span class="id">${esc(t.id)}${(t.deps&&t.deps.length)?' · needs '+esc(t.deps.join(',')):''}</span>
