@@ -1,6 +1,6 @@
 {
   "name": "pixel-agent-office",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A live pixel-art office where a team of Claude Code agents (PM → developers → QA) builds your project.",
   "type": "commonjs",
   "bin": {

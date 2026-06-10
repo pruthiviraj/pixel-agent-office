@@ -65,7 +65,7 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const https = require("https");
-const { execFile } = require("child_process");
+const { execFile, spawnSync } = require("child_process");
 
 // ---------- config ----------------------------------------------------------
 const argv = process.argv.slice(2);
@@ -89,6 +89,12 @@ const TIMEOUT    = +(process.env.ORCH_TIMEOUT_MIN || 30) * 60000;
 const BUDGET     = process.env.ORCH_BUDGET_USD !== undefined && process.env.ORCH_BUDGET_USD !== ""
   ? +process.env.ORCH_BUDGET_USD : null;
 const WEBHOOK    = process.env.ORCH_WEBHOOK_URL || "";
+// safety flags (preflight)
+const ALLOW_MAIN   = !!flag("allow-main")   || process.env.ORCH_ALLOW_MAIN === "1";
+const ALLOW_DIRTY  = !!flag("allow-dirty")  || process.env.ORCH_ALLOW_DIRTY === "1";
+const ALLOW_NOGIT  = !!flag("allow-no-git") || process.env.ORCH_ALLOW_NO_GIT === "1";
+const NO_BRANCH    = !!flag("no-branch")    || process.env.ORCH_NO_BRANCH === "1";
+const RISK_ACK     = !!flag("i-understand-risk") || process.env.ORCH_I_UNDERSTAND_RISK === "1";
 
 // ---------- stack profile (how we talk to the agents) -----------------------
 function loadProfile() {
@@ -712,6 +718,80 @@ function firstFail(out) {
 function shorten(s, n) { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
 function cap(s) { s = String(s || ""); return s.length > 8000 ? s.slice(-8000) : s; }
 
+// ---------- preflight safety -------------------------------------------------
+// Block obviously-bad real runs before any agent spins up. Dry-runs are inert
+// so we skip preflight entirely there. Real runs default to creating an
+// isolated `agent/run-*` branch so the agents never commit straight to
+// main/master and a stop-the-world `git branch -D` always rolls them back.
+function git(args) {
+  try {
+    const r = spawnSync("git", args, { cwd: PROJECT, encoding: "utf8" });
+    if (r.status === 0) return (r.stdout || "").trim();
+  } catch {}
+  return null;
+}
+function slugify(s, max) {
+  return String(s || "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, max || 40) || "sprint";
+}
+let SPRINT_BRANCH = "";
+function preflight() {
+  if (DRY) return;
+  if (SKIP && !RISK_ACK) {
+    console.error(
+      "\n  ⚠  ORCH_SKIP_PERMISSIONS=1 lets agents run ANY shell command without prompting.\n" +
+      "     If you truly want this, also pass --i-understand-risk\n" +
+      "     (or ORCH_I_UNDERSTAND_RISK=1). Refusing for now.\n");
+    process.exit(2);
+  }
+  const inGit = git(["rev-parse", "--is-inside-work-tree"]) === "true";
+  if (!inGit) {
+    if (!ALLOW_NOGIT) {
+      console.error(
+        "\n  ⚠  " + PROJECT + " is not a git repo.\n" +
+        "     Agents will edit files here with no undo. Run inside a git repo,\n" +
+        "     or pass --allow-no-git to override.\n");
+      process.exit(2);
+    }
+    note("preflight: not a git repo (--allow-no-git)");
+    return;
+  }
+  const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]) || "?";
+  const dirty  = git(["status", "--porcelain"]) || "";
+  if (dirty && !ALLOW_DIRTY) {
+    console.error(
+      "\n  ⚠  Uncommitted changes in " + PROJECT + ".\n" +
+      "     Agents may mix their work with yours. Commit or stash first,\n" +
+      "     or pass --allow-dirty to proceed anyway.\n");
+    process.exit(2);
+  }
+  if (NO_BRANCH) {
+    if ((branch === "main" || branch === "master") && !ALLOW_MAIN) {
+      console.error(
+        "\n  ⚠  Refusing to run on `" + branch + "` with --no-branch.\n" +
+        "     Drop --no-branch (recommended — a fresh agent/run-* branch is created),\n" +
+        "     or pass --allow-main to commit straight to " + branch + ".\n");
+      process.exit(2);
+    }
+    note("preflight: staying on `" + branch + "` (--no-branch)");
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+  const head  = String(EPIC).split("\n").map((l) => l.replace(/^#+\s*/, "").trim()).find(Boolean) || "sprint";
+  const slug  = slugify(head, 32);
+  SPRINT_BRANCH = "agent/run-" + stamp + "-" + slug;
+  const r = spawnSync("git", ["checkout", "-b", SPRINT_BRANCH], { cwd: PROJECT, encoding: "utf8" });
+  if (r.status !== 0) {
+    console.error(
+      "\n  ⚠  Could not create branch " + SPRINT_BRANCH + ":\n" +
+      (r.stderr || r.stdout || "(no output)") +
+      "\n     Re-run with --no-branch to skip auto-branching, or fix the git state.\n");
+    process.exit(2);
+  }
+  note("preflight: created branch " + SPRINT_BRANCH + " (from " + branch + ")");
+}
+
 // ---------- main ------------------------------------------------------------
 async function main() {
   if (!EPIC) {
@@ -722,11 +802,14 @@ async function main() {
   }
   if (!DRY && !fs.existsSync(PROJECT)) { console.error("Project folder not found: " + PROJECT); process.exit(1); }
 
+  preflight();
+
   console.log(`\n  Pixel Agent Office — Orchestrator${DRY ? "  (DRY RUN)" : ""}`);
   console.log(`  run     : ${RUN_ID}`);
   console.log(`  project : ${PROJECT}`);
   console.log(`  profile : ${PROFILE.name}`);
   console.log(`  workers : up to ${CAP} concurrent · ${MAX_RETRY} reworks · perm=${PMODE}${SKIP ? "+skip" : ""}${MODEL ? " · " + MODEL : ""}`);
+  if (SPRINT_BRANCH) console.log(`  branch  : ${SPRINT_BRANCH}  (isolated sprint branch)`);
   if (BUDGET != null) console.log(`  budget  : $${BUDGET.toFixed(2)} hard cap (ORCH_BUDGET_USD)`);
   if (WEBHOOK) console.log(`  webhook : ${WEBHOOK}`);
   console.log(`  view    : start the office (node server.js) and watch the team →\n`);

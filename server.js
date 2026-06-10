@@ -22,9 +22,12 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 const { execFile } = require("child_process");
 
 const PORT = process.env.PORT || 4040;
+const BIND = process.env.OFFICE_BIND || "127.0.0.1";       // localhost-only by default
+const TOKEN = (process.env.OFFICE_TOKEN || "").trim();     // empty = auth disabled
 const AUTO_LEARN = process.env.AUTO_LEARN === "1";
 const AUTO_LEARN_TTL = 24 * 3600e3; // re-learn at most once a day
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -438,6 +441,48 @@ const DEMO_HISTORY = [
 
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png" };
 
+// Loaded by index.html / pixel.html before any other script. Reads ?t=<token>
+// (or sessionStorage) and patches window.fetch so every /api/* request carries
+// the bearer header. If the server has no OFFICE_TOKEN set this is a no-op.
+const AUTH_SHIM = `(function(){
+  try {
+    var u = new URL(location.href);
+    var qt = u.searchParams.get("t");
+    if (qt) {
+      sessionStorage.setItem("office_token", qt);
+      u.searchParams.delete("t");
+      history.replaceState({}, "", u.toString());
+    }
+    var T = sessionStorage.getItem("office_token");
+    if (!T) return;
+    var orig = window.fetch.bind(window);
+    window.fetch = function(input, init){
+      init = init || {};
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      if (url.indexOf("/api/") === 0 || url.indexOf(location.origin + "/api/") === 0) {
+        var h = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
+        if (!h.has("Authorization")) h.set("Authorization", "Bearer " + T);
+        init.headers = h;
+      }
+      return orig(input, init);
+    };
+  } catch(e) { console.warn("auth shim:", e); }
+})();`;
+
+// Bearer-token gate for /api/*. Off when OFFICE_TOKEN is unset (current local-dev
+// behaviour). When set, every /api/* call must carry Authorization: Bearer <token>
+// — except /auth.js (the tiny client shim that puts the token into the page).
+function authOk(req) {
+  if (!TOKEN) return true;
+  const h = req.headers["authorization"] || "";
+  const m = /^Bearer\s+(.+)$/.exec(h);
+  if (!m) return false;
+  const got = Buffer.from(m[1]);
+  const want = Buffer.from(TOKEN);
+  if (got.length !== want.length) return false;
+  try { return crypto.timingSafeEqual(got, want); } catch { return false; }
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const json = (code, body) => {
@@ -446,6 +491,14 @@ const server = http.createServer(async (req, res) => {
   };
 
   try {
+    if (url.pathname.startsWith("/api/") && !authOk(req)) {
+      return json(401, { error: "unauthorized — set OFFICE_TOKEN and load the UI with ?t=<token>" });
+    }
+    // tiny client shim: makes the UI attach the Bearer header to every /api/* fetch
+    if (url.pathname === "/auth.js") {
+      res.writeHead(200, { "Content-Type": "text/javascript" });
+      return res.end(AUTH_SHIM);
+    }
     if (url.pathname === "/api/state") {
       if (url.searchParams.get("demo") === "1")
         return json(200, { demo: true, autoLearn: false, ...DEMO, error: null });
@@ -549,10 +602,22 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { json(500, { error: e.message }); }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, BIND, () => {
+  const host = BIND === "0.0.0.0" ? "<your-ip>" : BIND;
+  const base = `http://${host === "127.0.0.1" ? "localhost" : host}:${PORT}`;
+  const t = TOKEN ? `?t=${encodeURIComponent(TOKEN)}` : "";
   console.log(`\n  Agent Office`);
-  console.log(`  → http://localhost:${PORT}`);
-  console.log(`  → http://localhost:${PORT}/?demo=1   (sample office, no sessions needed)\n`);
+  console.log(`  → ${base}/${t}`);
+  console.log(`  → ${base}/?demo=1   (sample office, no sessions needed)\n`);
+  if (TOKEN) {
+    console.log(`  Auth: OFFICE_TOKEN is set — /api/* require Bearer token.`);
+    console.log(`         Open the URL above; the token is auto-stored in your browser.\n`);
+  } else if (BIND !== "127.0.0.1") {
+    console.log(`  ⚠  Bound to ${BIND} WITHOUT OFFICE_TOKEN — anyone on this network can drive`);
+    console.log(`     the orchestrator. Set OFFICE_TOKEN=<random> or rebind to 127.0.0.1.\n`);
+  } else {
+    console.log(`  Auth: off (localhost-only). Set OFFICE_TOKEN=<random> to require a token.\n`);
+  }
   console.log(`  Run it as a managed row inside agent view:`);
   console.log(`    claude --bg --exec 'node ${path.join(__dirname, "server.js")}'\n`);
   console.log(`  Auto-learning: ${AUTO_LEARN ? "ON (re-learns stale projects daily)" : "off — use the LEARN button, or AUTO_LEARN=1 node server.js"}\n`);

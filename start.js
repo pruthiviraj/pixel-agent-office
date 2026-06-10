@@ -17,13 +17,21 @@
 "use strict";
 const { spawn } = require("child_process");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const HERE = __dirname;
 const PORT = process.env.PORT || 4040;
 const argv = process.argv.slice(2);
-const cmd = argv[0] && !argv[0].startsWith("-") ? argv[0] : "office";
-const rest = cmd === argv[0] ? argv.slice(1) : argv;
+const KNOWN = new Set(["office", "start", "demo", "sprint", "init", "install-command", "uninstall-command", "help"]);
+// first positional that isn't a known command → treat as a sprint epic
+// (so `npx pao "build a discount engine"` Just Works)
+let cmd = "office";
+let rest = argv.slice();
+if (argv[0] && !argv[0].startsWith("-")) {
+  if (KNOWN.has(argv[0])) { cmd = argv[0]; rest = argv.slice(1); }
+  else { cmd = "sprint"; rest = argv.slice(); }
+}
 
 function run(script, args, opts = {}) {
   const child = spawn(process.execPath, [path.join(HERE, script), ...args], {
@@ -62,6 +70,42 @@ What should be true for users when this ships?
 - Follow the existing project conventions and test setup.
 `;
 
+// Markdown body for the Claude Code slash command we install at
+// ~/.claude/commands/sprint.md. Claude Code reads this file and exposes
+// `/sprint <args>` in any conversation; `$ARGUMENTS` becomes the user's text.
+const SLASH_COMMAND = `---
+description: Run a Pixel Agent Office sprint on the current repo (PM → devs → QA, live pixel office UI).
+allowed-tools: Bash, Read
+---
+
+The user wants a multi-agent Pixel Agent Office sprint in their current repo.
+
+Sprint goal: $ARGUMENTS
+
+Follow this exact protocol:
+
+1. **Dry-run first** (no API spend) to show the task breakdown:
+   \`\`\`
+   npx -y github:pruthiviraj/pixel-agent-office sprint "$ARGUMENTS" --dry-run
+   \`\`\`
+   Show the user the planned tasks and ask them to confirm.
+
+2. **On approval, run for real**. This auto-creates an \`agent/run-*\` branch and
+   refuses to touch main/master or a dirty worktree:
+   \`\`\`
+   npx -y github:pruthiviraj/pixel-agent-office sprint "$ARGUMENTS"
+   \`\`\`
+   Live viewer: http://localhost:4040 (start with \`npx -y github:pruthiviraj/pixel-agent-office\` in another terminal).
+
+3. **After it finishes**, run \`git status\` and \`git diff main...HEAD\` so the user
+   can review the agent's work before merging.
+
+Rules:
+- Never pass \`ORCH_SKIP_PERMISSIONS=1\` unless the user explicitly asks (and only with \`--i-understand-risk\`).
+- If the repo is dirty, ask the user to commit/stash first instead of using \`--allow-dirty\`.
+- If \`$ARGUMENTS\` is empty, ask the user what they want the sprint to build.
+`;
+
 const AGENTS_SNIPPET = `
 ## Pixel Agent Office (multi-agent sprints)
 This repo can be built by a Claude Code agent team via Pixel Agent Office.
@@ -95,10 +139,35 @@ switch (cmd) {
   case "sprint": {
     // default --project to the caller's cwd so `cd your-repo && ... sprint --epic ./epic.md` just works
     const args = rest.slice();
+    // accept a positional epic: `sprint ./epic.md` or `sprint "build a discount engine"`
+    if (args[0] && !args[0].startsWith("-") && !args.includes("--epic")) {
+      args.unshift("--epic", args.shift());
+    }
     if (!args.includes("--project") && !process.env.ORCH_PROJECT) {
       args.push("--project", process.cwd());
     }
     run("orchestrate.js", args);
+    break;
+  }
+
+  case "install-command": {
+    // Drop a Claude Code slash command into ~/.claude/commands/ so users can just type
+    // `/sprint <goal>` inside Claude Code and it runs Pixel Agent Office on their repo.
+    const dir = path.join(os.homedir(), ".claude", "commands");
+    const target = path.join(dir, "sprint.md");
+    try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {
+      console.error("  could not create " + dir + ": " + e.message); process.exit(1);
+    }
+    fs.writeFileSync(target, SLASH_COMMAND);
+    console.log(`  ✓ installed Claude Code slash command at ${target}`);
+    console.log(`    Open Claude Code in your project and type:  /sprint <your goal>`);
+    console.log(`    (uninstall with: pixel-agent-office uninstall-command)\n`);
+    break;
+  }
+  case "uninstall-command": {
+    const target = path.join(os.homedir(), ".claude", "commands", "sprint.md");
+    try { fs.unlinkSync(target); console.log(`  ✓ removed ${target}`); }
+    catch (e) { console.log(`  nothing to remove at ${target}`); }
     break;
   }
 
@@ -126,17 +195,24 @@ switch (cmd) {
   Pixel Agent Office — a live pixel office where Claude Code agents build your project
 
   Usage:
-    npx github:pruthiviraj/pixel-agent-office [command]
+    npx github:pruthiviraj/pixel-agent-office [command|<epic>]
 
   Commands:
-    (none) | office   start the office viewer            http://localhost:4040
-    demo              viewer + sample data (opens browser)
-    init              scaffold epic.md into the current repo + AGENTS.md snippet
-    sprint [flags]    run a PM→dev→QA sprint (flags pass through to orchestrate.js;
-                      --project defaults to the current directory)
-    help              this help
+    (none) | office       start the office viewer        http://localhost:4040
+    demo                  viewer + sample data (opens browser)
+    init                  scaffold epic.md + AGENTS.md snippet in the current repo
+    sprint <epic>         run a PM→dev→QA sprint (positional epic = file or text)
+    install-command       add /sprint to Claude Code (~/.claude/commands/sprint.md)
+    uninstall-command     remove the /sprint slash command
+    help                  this help
 
-  Sprint flags: --epic <file|text> --profile <name> --dry-run   (see README for env vars)
+  Shortcuts:
+    npx github:pruthiviraj/pixel-agent-office "build a discount engine"
+                              # same as: sprint "build a discount engine"
+
+  Safety flags (sprint): --dry-run --allow-main --allow-dirty --no-branch
+                         --i-understand-risk        (required with ORCH_SKIP_PERMISSIONS=1)
+  See README for the full env-var surface.
 `);
     if (cmd !== "help") process.exit(1);
   }

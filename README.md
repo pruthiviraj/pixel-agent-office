@@ -46,17 +46,32 @@ It's a real orchestration layer (not a toy): each worker is a full headless `cla
 npx github:pruthiviraj/pixel-agent-office demo
 ```
 
-That's the whole install — npm fetches this repo and runs it (zero dependencies). The full flow, from inside **your** project:
+That's the whole install — npm fetches this repo and runs it (zero dependencies). The shortest possible flow, from inside **your** project:
 
 ```bash
 cd your-project
-npx github:pruthiviraj/pixel-agent-office init                      # scaffold epic.md here
-npx github:pruthiviraj/pixel-agent-office sprint --epic ./epic.md --dry-run   # preview, no API spend
-npx github:pruthiviraj/pixel-agent-office sprint --epic ./epic.md   # real agents (project = cwd)
-npx github:pruthiviraj/pixel-agent-office                           # the office viewer, port 4040
+npx github:pruthiviraj/pixel-agent-office "build a discount engine" --dry-run   # preview, no API spend
+npx github:pruthiviraj/pixel-agent-office "build a discount engine"             # real sprint
+npx github:pruthiviraj/pixel-agent-office                                       # office viewer, :4040
 ```
 
-CLI commands: `office` (default) · `demo` · `init` · `sprint [flags]` · `help`.
+The first positional arg becomes the sprint goal (file path or inline text). A real run **auto-creates an `agent/run-*` branch** and refuses to touch `main`/`master` or a dirty worktree — rollback is `git branch -D <branch>`.
+
+### Best UX: install the `/sprint` slash command into Claude Code
+
+```bash
+npx github:pruthiviraj/pixel-agent-office install-command
+```
+
+That drops `~/.claude/commands/sprint.md`. Now inside Claude Code, in any repo:
+
+```
+/sprint build a discount engine
+```
+
+Claude reads the command, runs a dry-run first, asks you to approve the plan, then runs the real sprint on an isolated branch. Uninstall with `uninstall-command`.
+
+CLI commands: `office` (default) · `demo` · `init` · `sprint [flags]` · `install-command` · `uninstall-command` · `help`.
 
 Or clone it if you prefer:
 
@@ -69,9 +84,17 @@ node orchestrate.js --epic ./examples/sample-epic.md --dry-run    # mocked loop,
 node orchestrate.js --project /path/to/your/project --epic ./epic.md   # real sprint
 ```
 
-> 💡 Run the sprint on a branch. Workers edit real files. For full autonomy
-> (so workers can run your test/build commands without prompts) add
-> `ORCH_SKIP_PERMISSIONS=1` — only on a repo you trust it to change.
+> 💡 **Safety, on by default.** Real (non–`--dry-run`) sprints **refuse to start**
+> outside a git repo, with uncommitted changes, or on `main`/`master` with
+> `--no-branch`. They auto-create an `agent/run-*` branch so rollback is
+> `git branch -D <branch>`. For full autonomy (so workers can run your test/build
+> commands without prompts) add `ORCH_SKIP_PERMISSIONS=1 --i-understand-risk` —
+> only on a repo you trust it to change.
+>
+> **Local server auth.** Set `OFFICE_TOKEN=<random>` and `/api/*` requires
+> `Authorization: Bearer <token>`. The boot banner prints a `?t=…` URL that
+> stores the token in your browser automatically. The server binds to
+> `127.0.0.1` by default.
 
 ## 🎛️ Steering a live sprint — the control plane
 

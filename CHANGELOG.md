@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-06-10
+
+### Added
+
+- **Preflight safety checks** (`orchestrate.js`) — before any real (non-`--dry-run`) sprint:
+  - refuses to run outside a git repo (override with `--allow-no-git`),
+  - refuses to run with uncommitted changes (override with `--allow-dirty`),
+  - **auto-creates an isolated `agent/run-<stamp>-<slug>` branch** so the agents never commit straight to your working branch — rollback is `git branch -D <branch>`. Opt out with `--no-branch`,
+  - if `--no-branch` lands you on `main`/`master`, refuses unless `--allow-main`,
+  - if `ORCH_SKIP_PERMISSIONS=1`, refuses unless `--i-understand-risk` (or `ORCH_I_UNDERSTAND_RISK=1`) is also set.
+- **Server token auth** (`server.js`) — set `OFFICE_TOKEN=<random>` and every `/api/*` call requires `Authorization: Bearer <token>`. The boot banner prints a `?t=<token>` URL; opening it once stores the token in `sessionStorage` and a tiny `/auth.js` shim attaches the bearer header to every fetch. Server now binds to `127.0.0.1` by default (`OFFICE_BIND` to override, with a loud warning if you bind wider without a token).
+- **Claude Code `/sprint` slash command** — `npx github:pruthiviraj/pixel-agent-office install-command` drops `~/.claude/commands/sprint.md`. Inside Claude Code, `/sprint <your goal>` now runs Pixel Agent Office on the current repo (dry-run first, then real run after approval). Remove with `uninstall-command`.
+- **Shorter CLI** — `sprint` accepts a positional epic (`sprint ./epic.md` or `sprint "build a discount engine"`). The top-level CLI treats any unknown first arg as a sprint epic, so `npx github:pruthiviraj/pixel-agent-office "build X"` Just Works.
+
+### Changed
+
+- Default bind is now `127.0.0.1` (was `0.0.0.0`-ish via Node's default). Set `OFFICE_BIND=0.0.0.0` to expose on the network — but only with `OFFICE_TOKEN` set.
+
 ## [0.2.0] — 2026-06-10
 
 ### Added
