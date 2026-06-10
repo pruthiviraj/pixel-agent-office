@@ -88,8 +88,8 @@ node orchestrate.js --project /path/to/your/project --epic ./epic.md   # real sp
 > outside a git repo, with uncommitted changes, or on `main`/`master` with
 > `--no-branch`. They auto-create an `agent/run-*` branch so rollback is
 > `git branch -D <branch>`. For full autonomy (so workers can run your test/build
-> commands without prompts) add `ORCH_SKIP_PERMISSIONS=1 --i-understand-risk` —
-> only on a repo you trust it to change.
+> commands without prompts) prefix with `ORCH_SKIP_PERMISSIONS=1` *and* pass
+> `--i-understand-risk` — only on a repo you trust it to change.
 >
 > **Local server auth.** Set `OFFICE_TOKEN=<random>` and `/api/*` requires
 > `Authorization: Bearer <token>`. The boot banner prints a `?t=…` URL that
