@@ -1,0 +1,48 @@
+{
+  "name": "pixel-agent-office",
+  "version": "0.1.0",
+  "description": "A live pixel-art office where a team of Claude Code agents (PM → developers → QA) builds your project.",
+  "type": "commonjs",
+  "bin": {
+    "pixel-agent-office": "start.js",
+    "pixel-agent-orchestrate": "orchestrate.js"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "office": "node server.js",
+    "demo": "node server.js",
+    "dry-run": "node orchestrate.js --epic ./examples/sample-epic.md --dry-run"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai-agents",
+    "agent-orchestration",
+    "multi-agent",
+    "pixel-art",
+    "dashboard",
+    "devtools"
+  ],
+  "author": "Pruthiviraj Gane",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pruthiviraj/pixel-agent-office.git"
+  },
+  "homepage": "https://github.com/pruthiviraj/pixel-agent-office#readme",
+  "bugs": {
+    "url": "https://github.com/pruthiviraj/pixel-agent-office/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "orchestrate.js",
+    "server.js",
+    "start.js",
+    "public/",
+    "profiles/",
+    "examples/",
+    "docs/"
+  ]
+}

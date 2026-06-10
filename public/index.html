@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e12; --floor:#11161d; --line:#212c36; --ink:#d9e3e9; --dim:#71828e; --faint:#46555f;
+  --plan:#ffb454; --dev:#4fd6be; --test:#c792ea; --misc:#7d8d99;
+  --ok:#62d196; --warn:#ffd166; --err:#ff6b6b; --idle:#5b6b76;
+  --mono:'IBM Plex Mono',monospace; --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13px;overflow-x:hidden}
+
+/* ============ header ============ */
+header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 26px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;
+  background:rgba(11,14,18,.92);backdrop-filter:blur(8px)}
+.brand h1{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.brand h1 em{font-style:normal;color:var(--dev)}
+.brand .sub{color:var(--faint);font-size:10.5px;letter-spacing:.08em}
+.stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.stat{border:1px solid var(--line);background:var(--floor);border-radius:4px;padding:6px 12px;
+  display:flex;gap:8px;align-items:center;font-size:11.5px}
+.stat b{font-family:var(--disp);font-size:14px}
+.stat.alert{border-color:rgba(255,209,102,.5);box-shadow:0 0 14px rgba(255,209,102,.15)}
+.stat.alert b{color:var(--warn)}
+.live{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:10.5px;letter-spacing:.1em}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.6s infinite}
+.live.err i{background:var(--err)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+#banner{display:none;margin:12px 26px 0;padding:10px 15px;border:1px solid rgba(255,107,107,.4);
+  background:rgba(255,107,107,.06);border-radius:4px;color:#ffb3b3;font-size:12px;line-height:1.6}
+#banner code{color:var(--ink);background:rgba(255,255,255,.07);padding:1px 5px;border-radius:3px}
+#banner a{color:var(--warn)}
+
+/* ============ the animated office (canvas) ============ */
+#stage{position:relative;margin:16px 26px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 0%, #121922 0%, #0a0e13 70%);
+  aspect-ratio:1280/760;max-height:76vh;animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1}}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:default}
+#tip{position:absolute;pointer-events:none;z-index:5;display:none;max-width:280px;
+  background:rgba(10,14,19,.95);border:1px solid var(--line);border-radius:5px;padding:7px 10px;
+  font-size:11px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#tip b{font-family:var(--disp);font-size:11.5px}
+#tip .s{color:var(--dim);display:block;margin-top:2px}
+#legend{position:absolute;left:14px;bottom:12px;display:flex;gap:14px;flex-wrap:wrap;
+  font-size:10px;color:var(--faint);background:rgba(10,14,19,.6);border:1px solid var(--line);
+  border-radius:5px;padding:6px 11px;backdrop-filter:blur(3px)}
+#legend span{display:flex;align-items:center;gap:5px}
+#legend i{width:7px;height:7px;border-radius:50%}
+
+/* ============ sprint board (orchestration) ============ */
+#board{display:none;margin:14px 26px;border:1px solid var(--line);border-radius:8px;background:var(--floor);overflow:hidden}
+#board .bhead{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#board .bhead h2{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--plan)}
+#board .bhead .epic{color:var(--dim);font-size:11.5px;flex:1;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#board .bhead .ph{font-family:var(--disp);font-size:10px;letter-spacing:.12em;padding:3px 9px;border-radius:3px;border:1px solid var(--line);color:var(--dim)}
+#board .bhead .ph.run{color:var(--dev);border-color:rgba(79,214,190,.4)}
+#board .bhead .ph.done{color:var(--ok);border-color:rgba(98,209,150,.4)}
+#board .lanes{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+@media(max-width:820px){#board .lanes{grid-template-columns:1fr 1fr}}
+#board .lane{border-right:1px solid var(--line);min-height:90px;padding:10px 12px}
+#board .lane:last-child{border-right:none}
+#board .lane h3{font-size:10px;letter-spacing:.13em;color:var(--faint);text-transform:uppercase;margin-bottom:9px;font-family:var(--disp);display:flex;gap:6px;align-items:center}
+#board .lane h3 b{margin-left:auto;color:var(--dim);font-weight:400}
+#board .card{border:1px solid var(--line);border-left:3px solid var(--faint);border-radius:4px;
+  padding:7px 9px;margin-bottom:7px;background:#0d141b;font-size:11.5px;line-height:1.4}
+#board .card .id{font-family:var(--disp);font-size:9.5px;color:var(--faint);letter-spacing:.08em}
+#board .card .ti{color:var(--ink);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#board .card .rw{color:var(--warn);font-size:9.5px;margin-top:3px}
+#board .card.planned{border-left-color:var(--idle)}
+#board .card.dev{border-left-color:var(--dev);box-shadow:0 0 0 1px rgba(79,214,190,.08)}
+#board .card.qa{border-left-color:var(--test)}
+#board .card.done{border-left-color:var(--ok);opacity:.85}
+#board .card.failed{border-left-color:var(--err)}
+#board .card .pg{height:3px;border-radius:2px;background:#1a232b;margin-top:7px;overflow:hidden}
+#board .card .pg i{display:block;height:100%;border-radius:2px;background:var(--faint);transition:width .5s ease}
+#board .card.planned .pg i{width:8%;background:var(--idle)}
+#board .card.dev .pg i{width:42%;background:var(--dev);animation:pgpulse 1.6s ease-in-out infinite}
+#board .card.qa .pg i{width:76%;background:var(--test);animation:pgpulse 1.6s ease-in-out infinite}
+#board .card.done .pg i{width:100%;background:var(--ok)}
+#board .card.failed .pg i{width:100%;background:var(--err)}
+#board .card .stg{font-size:8.5px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-top:4px;font-family:var(--disp)}
+@keyframes pgpulse{0%,100%{opacity:1}50%{opacity:.55}}
+#board .blog{padding:9px 16px;border-top:1px solid var(--line);color:var(--faint);font-size:10.5px;
+  font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ============ project brain ============ */
+#brain{margin:14px 26px 80px;border:1px solid var(--line);border-radius:8px;background:var(--floor);overflow:hidden}
+#brain .bhead{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#brain .bhead h2{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dev)}
+#brain .tabs{display:flex;gap:6px;flex-wrap:wrap}
+#brain .tabs button{background:none;border:1px solid var(--line);border-radius:3px;color:var(--dim);
+  font-family:var(--mono);font-size:11px;padding:4px 11px;cursor:pointer}
+#brain .tabs button.on{color:var(--ink);border-color:var(--dev);background:rgba(79,214,190,.07)}
+#brain .bbody{display:grid;grid-template-columns:1.5fr 1fr;gap:0}
+@media(max-width:860px){#brain .bbody{grid-template-columns:1fr}}
+#brain .know{padding:14px 18px;border-right:1px solid var(--line);min-height:130px}
+#brain .know pre{white-space:pre-wrap;color:#b9c8d2;font-size:12px;line-height:1.7;font-family:var(--mono)}
+#brain .know .meta{color:var(--faint);font-size:10.5px;margin-bottom:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#brain .know .learnbtn{background:rgba(79,214,190,.08);border:1px solid rgba(79,214,190,.45);color:var(--dev);
+  font-family:var(--disp);letter-spacing:.12em;font-size:10.5px;padding:5px 13px;border-radius:3px;cursor:pointer}
+#brain .know .learnbtn:hover{background:rgba(79,214,190,.16)}
+#brain .know .learnbtn[disabled]{opacity:.45;cursor:wait}
+#brain .hist{padding:14px 18px}
+#brain .hist h3{font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;margin-bottom:9px;font-family:var(--disp)}
+#brain .hist ul{list-style:none}
+#brain .hist li{display:flex;gap:8px;align-items:center;padding:4px 0;font-size:11.5px;color:var(--dim);border-bottom:1px dashed #1a232c}
+#brain .hist li i{width:6px;height:6px;border-radius:50%;flex:none}
+#brain .hist li .t{margin-left:auto;color:var(--faint);font-size:10px;flex:none}
+.xpbar{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.xpbar .xpteam{font-size:10.5px;color:var(--dim);display:flex;gap:6px;align-items:center}
+.xpbar .xpteam b{font-family:var(--disp)}
+
+/* ============ drawer ============ */
+#drawer{position:fixed;inset:0 0 0 auto;width:min(620px,92vw);background:var(--floor);border-left:1px solid var(--line);
+  transform:translateX(102%);transition:transform .25s ease;z-index:40;display:flex;flex-direction:column;
+  box-shadow:-30px 0 60px rgba(0,0,0,.55)}
+#drawer.open{transform:none}
+#drawer .dhead{padding:15px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+#drawer .dhead h2{font-family:var(--disp);font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .dhead button{background:none;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);padding:5px 11px;border-radius:3px;cursor:pointer}
+#drawer .dcmd{padding:9px 20px;color:var(--faint);font-size:11px;border-bottom:1px solid var(--line)}
+#drawer .dcmd code{color:var(--dim)}
+#drawer pre{flex:1;overflow:auto;padding:16px 20px;font-size:12px;line-height:1.65;color:#b9c8d2;white-space:pre-wrap;word-break:break-word}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s;z-index:35}
+#scrim.open{opacity:1;pointer-events:auto}
+
+footer{position:fixed;bottom:0;left:0;right:0;padding:7px 26px;font-size:10px;color:var(--faint);
+  border-top:1px solid var(--line);background:rgba(11,14,18,.94);backdrop-filter:blur(4px);display:flex;gap:18px;flex-wrap:wrap;z-index:30}
+footer code{color:var(--dim)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Agent <em>Office</em></h1>
+    <div class="sub">claude code · live floor view</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span>ON SHIFT</span><b id="st-total">0</b></div>
+    <div class="stat"><span>WORKING</span><b id="st-active">0</b></div>
+    <div class="stat" id="st-input-wrap"><span>HANDS UP</span><b id="st-input">0</b></div>
+    <div class="stat"><span>DONE</span><b id="st-done">0</b></div>
+    <div class="live" id="live"><i></i><span id="live-label">LIVE · 5s</span></div>
+  </div>
+</header>
+
+<div id="banner"></div>
+
+<div id="stage">
+  <canvas id="scene"></canvas>
+  <div id="tip"></div>
+  <div id="legend">
+    <span><i style="background:var(--ok)"></i>typing = working</span>
+    <span><i style="background:var(--warn)"></i>hand up = needs you</span>
+    <span><i style="background:var(--ok)"></i>cheering = done</span>
+    <span><i style="background:var(--err)"></i>slumped = failed</span>
+    <span><i style="background:var(--idle)"></i>wandering = idle</span>
+  </div>
+</div>
+
+<section id="board">
+  <div class="bhead">
+    <h2>▦ Sprint Board</h2>
+    <span class="epic" id="board-epic"></span>
+    <span class="ph" id="board-phase"></span>
+  </div>
+  <div class="lanes" id="board-lanes"></div>
+  <div class="blog" id="board-log"></div>
+</section>
+
+<section id="brain">
+  <div class="bhead">
+    <h2>◈ Project Brain</h2>
+    <div class="tabs" id="brain-tabs"></div>
+  </div>
+  <div class="bbody">
+    <div class="know" id="brain-know"></div>
+    <div class="hist" id="brain-hist"></div>
+  </div>
+</section>
+
+<div id="scrim" onclick="closeDrawer()"></div>
+<aside id="drawer">
+  <div class="dhead"><h2 id="d-title">session</h2><button onclick="closeDrawer()">ESC</button></div>
+  <div class="dcmd" id="d-cmd"></div>
+  <pre id="d-logs"></pre>
+</aside>
+
+<footer>
+  <span>hire into a zone:</span>
+  <code>claude --bg --name "plan: …" "task"</code>
+  <code>claude --bg --name "dev: …" "task"</code>
+  <code>claude --bg --name "test: …" "task"</code>
+  <span style="margin-left:auto">click a worker for their work log</span>
+</footer>
+
+<script>
+/* ===================================================================== *
+ *  Agent Office — animated 2D floor. Each session is a little human who  *
+ *  walks in, sits at a desk and types, takes coffee breaks, wanders when *
+ *  idle, rushes to the aisle and waves when blocked, cheers when done,   *
+ *  and slumps when it fails. Rendered on a canvas at 60fps; backend      *
+ *  state is polled every 5s and drives each character's behaviour.       *
+ * ===================================================================== */
+const DEMO = new URLSearchParams(location.search).get('demo')==='1';
+const ZONECOL = {planning:'#ffb454',developer:'#4fd6be',tester:'#c792ea',unassigned:'#7d8d99'};
+const HAIR = ['#2c2c34','#4a3120','#6b6b75','#1f3a4a','#5a2a3a','#3a4a20','#101216','#7a5230'];
+const SKIN = ['#e8b890','#c89070','#8a5a3b','#f0c8a0','#a06a45','#d8a878'];
+const LVL = xp => xp>=20?'STAFF':xp>=8?'SENIOR':xp>=3?'MID':'JUNIOR';
+
+let sessions=[], knowledge={}, curProject=null, orch=null;
+
+/* ---- small helpers ---- */
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function hash(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h}
+function age(ts){if(!ts)return'';const t=typeof ts==='number'?ts:Date.parse(ts);if(isNaN(t))return'';
+  const m=Math.max(0,Math.round((Date.now()-t)/60000));
+  if(m<1)return'now';if(m<60)return m+'m';const h=Math.floor(m/60);return h<24?h+'h':Math.floor(h/24)+'d'}
+function base(p){return String(p||'').replace(/[\\/]+$/,'').split(/[\\/]/).pop()||p}
+function rnd(a,b){return a+Math.random()*(b-a)}
+
+/* ===================================================================== *
+ *  WORLD  — a 1280x760 virtual floor, four zones around a central aisle  *
+ * ===================================================================== */
+const W=1280, H=760;
+const ZONES = {
+  planning:  {x:50,  y:64,  w:560, h:300, col:ZONECOL.planning,  label:'PM · WAR ROOM', team:'planning'},
+  developer: {x:670, y:64,  w:560, h:300, col:ZONECOL.developer, label:'DEVELOPERS',   team:'developer'},
+  tester:    {x:50,  y:402, w:560, h:300, col:ZONECOL.tester,    label:'QA · TESTING', team:'tester'},
+  unassigned:{x:670, y:402, w:560, h:300, col:ZONECOL.misc||ZONECOL.unassigned, label:'LOBBY', team:'unassigned'},
+};
+const COFFEE = {x: ZONES.unassigned.x+70, y: ZONES.unassigned.y+ZONES.unassigned.h-58};
+const DOOR   = {x: ZONES.unassigned.x+ZONES.unassigned.w-70, y: ZONES.unassigned.y+ZONES.unassigned.h-16};
+const PLANTS = [
+  {x:ZONES.planning.x+ZONES.planning.w-34,  y:ZONES.planning.y+50},
+  {x:ZONES.developer.x+30,                  y:ZONES.developer.y+ZONES.developer.h-34},
+  {x:ZONES.tester.x+ZONES.tester.w-34,      y:ZONES.tester.y+ZONES.tester.h-34},
+];
+
+/* build desk slots (sit position + the desk in front of the worker) */
+function makeDesks(z){
+  const desks=[]; const cols=3, rows=2;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const sx=z.x+78+c*168, sy=z.y+118+r*128;
+    desks.push({sx,sy,owner:null});
+  }
+  return desks;
+}
+for(const k in ZONES) ZONES[k].desks=makeDesks(ZONES[k]);
+
+function claimDesk(c){
+  const z=ZONES[c.team]||ZONES.unassigned;
+  if(c.desk && c.desk.owner===c.id) return c.desk;
+  const free=z.desks.find(d=>!d.owner);
+  if(free){ free.owner=c.id; c.desk=free; }
+  return c.desk;
+}
+function releaseDesk(c){ if(c.desk && c.desk.owner===c.id) c.desk.owner=null; c.desk=null; }
+
+/* ===================================================================== *
+ *  CHARACTERS                                                            *
+ * ===================================================================== */
+const chars = {};   // id -> character
+
+function makeChar(s){
+  const id=s.id||s.name; const h=hash(id);
+  const c={
+    id, session:s, status:s.status, team:s.team,
+    x:DOOR.x+rnd(-12,12), y:DOOR.y+rnd(-6,6),
+    face:-1, phase:Math.random()*6.28, speed:0.085+Math.random()*0.03, seed:h,
+    skin:SKIN[h%SKIN.length], hair:HAIR[(h>>3)%HAIR.length],
+    shirt:ZONECOL[s.team]||ZONECOL.unassigned,
+    goal:null, act:'', cool:0, desk:null, leaving:false,
+  };
+  return c;
+}
+function updateChar(c,s){
+  c.session=s;
+  if(c.team!==s.team){ releaseDesk(c); c.team=s.team; c.shirt=ZONECOL[s.team]||ZONECOL.unassigned; c.act=''; c.goal=null; c.cool=0; }
+  if(c.status!==s.status){ c.status=s.status; c.act=''; c.goal=null; c.cool=0;
+    if(s.status!=='working' && s.status!=='failed') releaseDesk(c); }
+}
+
+function syncChars(){
+  const live=new Set();
+  for(const s of sessions){
+    const id=s.id||s.name; if(!id) continue; live.add(id);
+    if(chars[id]) updateChar(chars[id],s); else chars[id]=makeChar(s);
+  }
+  for(const id in chars){
+    const c=chars[id];
+    if(!live.has(id) && !c.leaving){ c.leaving=true; releaseDesk(c); c.goal={x:DOOR.x,y:DOOR.y,act:'gone'}; }
+  }
+}
+
+/* walk the character toward a point, then strike a stationary pose */
+function walkTo(c,x,y,act){ c.goal={x,y,act}; }
+
+/* duration a pose holds before the character re-thinks (ms) */
+function actDur(a){
+  return {sit:rnd(2400,3600),coffee:rnd(1800,2600),wave:rnd(1200,1700),
+          cheer:rnd(1200,1700),slump:rnd(2600,3600),idle:rnd(1400,2400),
+          sleep:rnd(4000,8000)}[a] || 1600;
+}
+
+/* decide the next goal — purposeful only: walk to the right spot for the agent's
+   real status, then HOLD. No random wandering / coffee / dozing. */
+const HOLD = 6e5;   // once in place, stay until the status changes (which re-decides)
+function homeSpot(c){
+  const z=ZONES[c.team]||ZONES.unassigned;
+  // a stable per-agent spot inside its zone (deterministic — never roams)
+  const x=z.x+44+(c.seed % Math.max(1,(z.w-88)));
+  const y=z.y+72+((c.seed*7>>>0) % Math.max(1,(z.h-128)));
+  return {x,y};
+}
+function decide(c,t){
+  if(c.leaving) return;
+  const z=ZONES[c.team]||ZONES.unassigned;
+  const st=c.status;
+  if(st==='working'){
+    if(!c.desk) claimDesk(c);
+    const d=c.desk;
+    if(c.act!=='sit') walkTo(c, d?d.sx:z.x+z.w/2, d?d.sy:z.y+z.h-60, 'sit');
+    else c.cool=t+HOLD;                                   // sit and stay at the desk
+  } else if(st==='needs_input'){
+    if(c.act!=='wave') walkTo(c, z.x+z.w*0.5, z.y+z.h-30, 'wave'); else c.cool=t+HOLD;
+  } else if(st==='completed'){
+    if(c.act!=='cheer'){ const d=c.desk; walkTo(c, d?d.sx-16:z.x+z.w*0.5, d?d.sy:z.y+z.h-44, 'cheer'); } else c.cool=t+HOLD;
+  } else if(st==='failed'){
+    if(c.act!=='slump'){ if(!c.desk) claimDesk(c); const d=c.desk; walkTo(c, d?d.sx:z.x+z.w*0.5, d?d.sy:z.y+z.h-44, 'slump'); } else c.cool=t+HOLD;
+  } else { /* idle / stopped / unknown — stand at a fixed spot, no roaming */
+    if(c.act!=='idle'){ const s=homeSpot(c); walkTo(c, s.x, s.y, 'idle'); } else c.cool=t+HOLD;
+  }
+}
+
+function tickChar(c,t,dt){
+  if(c.goal){
+    const dx=c.goal.x-c.x, dy=c.goal.y-c.y, dist=Math.hypot(dx,dy);
+    if(dist<2.2){
+      const act=c.goal.act; c.x=c.goal.x; c.y=c.goal.y; c.goal=null; c.moving=false;
+      if(act==='gone'){ delete chars[c.id]; return; }
+      c.act=act;
+      if(act==='sit'||act==='slump') c.face=1;          // face the monitor
+      c.cool=t+actDur(act);
+    } else {
+      const step=c.speed*dt, f=Math.min(1,step/dist);
+      c.x+=dx*f; c.y+=dy*f; c.moving=true;
+      if(Math.abs(dx)>0.4) c.face = dx<0?-1:1;
+      c.phase += step*0.20;
+    }
+  } else {
+    c.moving=false;
+    if(t>c.cool) decide(c,t);
+  }
+}
+
+/* ===================================================================== *
+ *  RENDERING                                                             *
+ * ===================================================================== */
+const canvas=document.getElementById('scene'), ctx=canvas.getContext('2d');
+const dpr=Math.min(2, window.devicePixelRatio||1);
+const view={s:1,ox:0,oy:0,rw:0,rh:0};
+let xpAll={planning:0,developer:0,tester:0,unassigned:0};
+
+function fit(){
+  const r=canvas.getBoundingClientRect();
+  const nw=Math.max(1,Math.round(r.width*dpr)), nh=Math.max(1,Math.round(r.height*dpr));
+  if(canvas.width!==nw) canvas.width=nw;
+  if(canvas.height!==nh) canvas.height=nh;
+  view.s=Math.min(r.width/W, r.height/H);
+  view.ox=(r.width-W*view.s)/2; view.oy=(r.height-H*view.s)/2;
+  view.rw=r.width; view.rh=r.height;
+  ctx.setTransform(view.s*dpr,0,0,view.s*dpr, view.ox*dpr, view.oy*dpr);
+}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+function drawZone(z){
+  // floor
+  ctx.fillStyle='#0f141b'; rr(z.x,z.y,z.w,z.h,12); ctx.fill();
+  // subtle floor tiles
+  ctx.save(); rr(z.x,z.y,z.w,z.h,12); ctx.clip();
+  ctx.strokeStyle='rgba(255,255,255,.022)'; ctx.lineWidth=1;
+  for(let gx=z.x+46;gx<z.x+z.w;gx+=46){ctx.beginPath();ctx.moveTo(gx,z.y+34);ctx.lineTo(gx,z.y+z.h);ctx.stroke();}
+  for(let gy=z.y+34+46;gy<z.y+z.h;gy+=46){ctx.beginPath();ctx.moveTo(z.x,gy);ctx.lineTo(z.x+z.w,gy);ctx.stroke();}
+  // header wall band
+  ctx.fillStyle='#0b1016'; ctx.fillRect(z.x,z.y,z.w,34);
+  ctx.restore();
+  // border + accent
+  ctx.strokeStyle=z.col+'4d'; ctx.lineWidth=1.5; rr(z.x,z.y,z.w,z.h,12); ctx.stroke();
+  ctx.fillStyle=z.col; rr(z.x+12,z.y+13,9,9,2); // diamond-ish tag
+  // label
+  ctx.fillStyle=z.col; ctx.font='600 13px Chakra Petch, sans-serif'; ctx.textBaseline='middle';
+  ctx.fillText(z.label, z.x+30, z.y+18);
+  // level badge (right)
+  const xp=xpAll[z.team]||0;
+  const badge=`${LVL(xp)} · ${xp} XP`;
+  ctx.font='400 10px IBM Plex Mono, monospace';
+  const bw=ctx.measureText(badge).width+16;
+  ctx.strokeStyle=z.col+'55'; ctx.fillStyle='#0b1016';
+  rr(z.x+z.w-bw-12, z.y+8, bw, 18, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=z.col; ctx.fillText(badge, z.x+z.w-bw-4, z.y+18);
+}
+
+function drawDesk(d){
+  const working = d.owner && chars[d.owner] && chars[d.owner].status==='working';
+  const failed  = d.owner && chars[d.owner] && chars[d.owner].status==='failed';
+  const sx=d.sx, sy=d.sy;
+  // desktop surface (in front of where the worker sits)
+  ctx.fillStyle='#222d36'; rr(sx+8, sy-26, 40, 6, 2); ctx.fill();
+  ctx.fillStyle='#1a232b'; ctx.fillRect(sx+10, sy-20, 4, 16); ctx.fillRect(sx+42, sy-20, 4, 16);
+  // monitor
+  const glow = working?'#4fd6be':failed?'#ff6b6b':'#33414c';
+  ctx.fillStyle='#0a0f14'; ctx.strokeStyle=glow; ctx.lineWidth=2;
+  rr(sx+34, sy-50, 22, 16, 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = working?'rgba(79,214,190,.22)':failed?'rgba(255,107,107,.2)':'#0d141b';
+  ctx.fillRect(sx+36, sy-48, 18, 12);
+  if(working){
+    ctx.fillStyle=glow; const n=2+((performance.now()/180|0)%3);
+    for(let i=0;i<n;i++) ctx.fillRect(sx+38, sy-45+i*3, 6+((i*5)%10), 1.4);
+    ctx.shadowColor=glow; ctx.shadowBlur=12; ctx.strokeRect(sx+34,sy-50,22,16); ctx.shadowBlur=0;
+  }
+  ctx.fillStyle='#222d36'; ctx.fillRect(sx+44, sy-34, 2, 6);
+}
+
+/* draw one humanoid. assumes ctx already translated to feet & depth-scaled. */
+function drawHuman(c,t){
+  const moving=c.moving, act=c.act;
+  const skin=c.skin, hair=c.hair, shirt=c.shirt, pants='#2b3640';
+  let hop=0, sit=false, lean=0, headTilt=0;
+  let lLeg=0,rLeg=0,lArm=0.12,rArm=-0.12;
+
+  if(moving){
+    const p=c.phase; const sw=Math.sin(p);
+    lLeg=sw*0.55; rLeg=-sw*0.55; lArm=-sw*0.5; rArm=sw*0.5; hop=Math.abs(sw)*1.1;
+  } else if(act==='sit'){
+    sit=true; lean=0.12; const k=Math.sin(t/110);
+    lArm=1.45+k*0.18; rArm=1.45+Math.sin(t/110+1)*0.18;          // typing
+  } else if(act==='coffee'){
+    sit=false; rArm=1.5; lArm=0.1; lean=0.05;                     // holding mug
+  } else if(act==='wave'){
+    const k=Math.sin(t/150); rArm=-2.5+k*0.28; lArm=0.14; headTilt=-0.05;
+  } else if(act==='cheer'){
+    lArm=-2.6; rArm=2.6; hop=Math.abs(Math.sin(t/170))*4;
+  } else if(act==='slump'){
+    sit=true; lean=0.55; headTilt=0.35; lArm=0.25; rArm=-0.1;
+  } else if(act==='sleep'){
+    lean=0.04; lArm=0.45; rArm=-0.45; hop=Math.sin(t/600)*0.5; headTilt=0.18;
+  } else { /* idle stand */
+    hop=Math.sin(t/520+c.phase)*0.6;
+  }
+
+  ctx.translate(0,-hop);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // legs
+  ctx.strokeStyle=pants;
+  if(sit){
+    ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(11,-15); ctx.lineTo(13,-1); ctx.stroke();   // right thigh+shin
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(9,-15);  ctx.lineTo(9,-1);  ctx.stroke();   // left
+  } else {
+    ctx.lineWidth=5;
+    const leg=(a)=>{ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(Math.sin(a)*15, -15+Math.cos(a)*15);ctx.stroke();};
+    leg(lLeg); leg(rLeg);
+  }
+
+  // upper body (torso + arms + head), rotated by lean about the hip
+  ctx.save();
+  ctx.translate(0,-15); ctx.rotate(lean);
+  // torso
+  ctx.strokeStyle=shirt; ctx.lineWidth=11;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-17); ctx.stroke();
+  // arms from shoulder (0,-15)
+  ctx.lineWidth=4.2; ctx.strokeStyle=shirt;
+  const arm=(a)=>{const hx=Math.sin(a)*14, hy=-15+Math.cos(a)*14;
+    ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.fillStyle=skin;ctx.beginPath();ctx.arc(hx,hy,2.3,0,7);ctx.fill();
+    if(act==='coffee'&&a===rArm){ctx.fillStyle='#cdd6dc';ctx.fillRect(hx-2,hy-3,4,4);} };
+  arm(lArm); arm(rArm);
+  // head
+  ctx.save(); ctx.translate(0,-22); ctx.rotate(headTilt);
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(0,0,6.4,0,7); ctx.fill();
+  // hair cap
+  ctx.fillStyle=hair; ctx.beginPath(); ctx.arc(0,-1.2,6.4,Math.PI*1.04,Math.PI*2.04); ctx.fill();
+  ctx.fillRect(-6.4,-2,3.4,3);
+  // face (eye facing +x after mirror)
+  ctx.fillStyle='#15181c'; ctx.beginPath(); ctx.arc(3.4,0.4,1.05,0,7); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawFX(c,t){
+  let txt='',col='',y=-58,size=15;
+  if(c.status==='needs_input'){ txt='?'; col='#ffd166'; y=-60-Math.abs(Math.sin(t/180))*5; size=18; }
+  else if(c.status==='completed'){ txt='✓'; col='#62d196'; size=16; }
+  else if(c.status==='failed'){ txt='!'; col='#ff6b6b'; size=16; }
+  else if(c.act==='sleep'){ txt='z'; col='#5b6b76'; size=12; y=-56-((t/400)%10); }
+  if(!txt) return;
+  ctx.font=`700 ${size}px Chakra Petch, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor=col; ctx.shadowBlur=10; ctx.fillStyle=col; ctx.fillText(txt,0,y); ctx.shadowBlur=0;
+  ctx.textAlign='left';
+}
+
+function drawChar(c,t){
+  const sc=0.92+(c.y/H)*0.26;
+  ctx.save();
+  ctx.translate(c.x,c.y);
+  // soft shadow
+  ctx.fillStyle='rgba(0,0,0,.34)'; ctx.beginPath(); ctx.ellipse(0,2,12*sc,4*sc,0,0,7); ctx.fill();
+  ctx.scale(sc,sc);
+  // glow ring for attention states
+  if(c.status==='needs_input'){ ctx.save(); ctx.globalAlpha=.5+.3*Math.sin(t/250);
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.ellipse(0,-2,15,6,0,0,7); ctx.stroke(); ctx.restore(); }
+  // body (mirror by facing)
+  ctx.save(); ctx.scale(c.face,1); drawHuman(c,t); ctx.restore();
+  // fx + nameplate (not mirrored)
+  drawFX(c,t);
+  const nm=c.session?.name||c.id;
+  ctx.font='500 9.5px IBM Plex Mono, monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle = c.status==='working'?'#cdd6dc':'#71828e';
+  let label=nm.length>20?nm.slice(0,19)+'…':nm;
+  ctx.fillText(label,0,10); ctx.textAlign='left';
+  // activity / completion bar under the nameplate
+  const bw=32, bx=-bw/2, by=22, bh=3.2, st=c.status;
+  ctx.fillStyle='#1a232b'; rr(bx,by,bw,bh,1.6); ctx.fill();          // track
+  if(st==='working'){            // indeterminate moving segment = "in progress"
+    const seg=bw*0.4, range=bw-seg, p=(Math.sin(t/620+c.phase)*0.5+0.5)*range;
+    ctx.fillStyle=c.shirt; rr(bx+p,by,seg,bh,1.6); ctx.fill();
+  } else if(st==='completed'){ ctx.fillStyle='#62d196'; rr(bx,by,bw,bh,1.6); ctx.fill(); }
+  else if(st==='failed'){ ctx.fillStyle='#ff6b6b'; rr(bx,by,bw,bh,1.6); ctx.fill(); }
+  else if(st==='needs_input'){ ctx.fillStyle='#ffd166'; rr(bx,by,bw*(0.55+0.25*Math.sin(t/300)),bh,1.6); ctx.fill(); }
+  ctx.restore();
+}
+
+function drawProps(t){
+  // coffee machine
+  const cm=COFFEE;
+  ctx.fillStyle='#1b2630'; rr(cm.x-12,cm.y-30,24,34,3); ctx.fill();
+  ctx.strokeStyle='#2c3a45'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='#0c1117'; ctx.fillRect(cm.x-7,cm.y-24,14,9);
+  ctx.fillStyle='#4fd6be'; ctx.beginPath(); ctx.arc(cm.x+6,cm.y-6,1.6,0,7); ctx.fill();
+  ctx.fillStyle='#71828e'; ctx.font='400 8px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('☕',cm.x,cm.y+10); ctx.textAlign='left';
+  // door (entrance in lobby wall)
+  const d=DOOR;
+  ctx.fillStyle='#0a0e13'; ctx.fillRect(d.x-16,d.y-4,32,8);
+  ctx.fillStyle='#1c2832'; rr(d.x-15,d.y-40,30,40,3); ctx.fill();
+  ctx.strokeStyle='#33414c'; ctx.lineWidth=1.4; rr(d.x-15,d.y-40,30,40,3); ctx.stroke();
+  ctx.fillStyle='#0d141b'; ctx.fillRect(d.x-10,d.y-36,20,34);
+  ctx.fillStyle='#4fd6be'; ctx.beginPath(); ctx.arc(d.x+6,d.y-18,1.5,0,7); ctx.fill();
+  ctx.fillStyle='#46555f'; ctx.font='400 8px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('ENTRANCE',d.x,d.y+12); ctx.textAlign='left';
+  // plants
+  for(const p of PLANTS){
+    ctx.fillStyle='#1a2129'; rr(p.x-5,p.y-2,10,8,2); ctx.fill();
+    ctx.fillStyle='#3a5a40'; ctx.beginPath(); ctx.arc(p.x,p.y-8,7,0,7); ctx.fill();
+    ctx.fillStyle='#4a6f50'; ctx.beginPath(); ctx.arc(p.x-3,p.y-11,4,0,7); ctx.arc(p.x+3,p.y-10,4,0,7); ctx.fill();
+  }
+}
+
+let lastT=performance.now();
+function frame(t){
+  const dt=Math.min(50, t-lastT); lastT=t;
+  fit();
+  // recompute aggregate XP for zone badges
+  xpAll={planning:0,developer:0,tester:0,unassigned:0};
+  for(const k of Object.values(knowledge)) for(const team in xpAll) xpAll[team]+=(k.teamXP?.[team]||0);
+
+  ctx.clearRect(-view.ox/view.s, -view.oy/view.s, view.rw/view.s, view.rh/view.s);
+  for(const k in ZONES) drawZone(ZONES[k]);
+  for(const k in ZONES) for(const d of ZONES[k].desks) drawDesk(d);
+  drawProps(t);
+
+  // advance + draw characters, back-to-front by y
+  const list=Object.values(chars);
+  for(const c of list) tickChar(c,t,dt);
+  list.sort((a,b)=>a.y-b.y);
+  for(const c of list) drawChar(c,t);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- pointer: hover tooltip + click to open the work-log drawer ---- */
+function worldFromEvent(e){
+  const r=canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left-view.ox)/view.s, y:(e.clientY-r.top-view.oy)/view.s };
+}
+function pick(wx,wy){
+  let hit=null;
+  for(const c of Object.values(chars)){
+    const sc=0.92+(c.y/H)*0.26;
+    if(wx>c.x-13*sc && wx<c.x+13*sc && wy>c.y-58*sc && wy<c.y+6){
+      if(!hit || c.y>hit.y) hit=c;
+    }
+  }
+  return hit;
+}
+const tip=document.getElementById('tip');
+canvas.addEventListener('mousemove',e=>{
+  const {x,y}=worldFromEvent(e); const c=pick(x,y);
+  if(c){ canvas.style.cursor='pointer';
+    const s=c.session||{};
+    tip.style.display='block';
+    tip.innerHTML=`<b>${esc(s.name||c.id)}</b><span class="s">${esc(s.summary||c.status)}</span>`;
+    const r=canvas.getBoundingClientRect();
+    let lx=e.clientX-r.left+14, ly=e.clientY-r.top+14;
+    if(lx+tip.offsetWidth>r.width) lx=e.clientX-r.left-tip.offsetWidth-14;
+    tip.style.left=lx+'px'; tip.style.top=ly+'px';
+  } else { canvas.style.cursor='default'; tip.style.display='none'; }
+});
+canvas.addEventListener('mouseleave',()=>{tip.style.display='none';});
+canvas.addEventListener('click',e=>{
+  const {x,y}=worldFromEvent(e); const c=pick(x,y);
+  if(c && c.session && c.session.id) openDrawer(c.session.id);
+  else if(c && c.id) openDrawer(c.id);
+});
+
+/* ===================================================================== *
+ *  HUD + PROJECT BRAIN  (unchanged behaviour from the original)          *
+ * ===================================================================== */
+/* ---- sprint board (orchestration coordination) ---- */
+const LANES=[
+  {key:'planned', label:'Backlog',  match:t=>t.state==='planned'},
+  {key:'dev',     label:'In Dev',   match:t=>t.state==='dev'},
+  {key:'qa',      label:'In QA',    match:t=>t.state==='qa'},
+  {key:'done',    label:'Shipped',  match:t=>t.state==='done'},
+  {key:'failed',  label:'Failed',   match:t=>t.state==='failed'},
+];
+function renderBoard(){
+  const el=document.getElementById('board');
+  if(!orch || !Array.isArray(orch.board) || !orch.board.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  document.getElementById('board-epic').textContent=orch.epic||'';
+  const ph=document.getElementById('board-phase');
+  ph.textContent=(orch.phase||'').toUpperCase()||(orch.active?'BUILDING':'IDLE');
+  ph.className='ph '+(orch.phase==='done'?'done':orch.active?'run':'');
+  document.getElementById('board-lanes').innerHTML=LANES.map(L=>{
+    const cards=orch.board.filter(L.match);
+    const STG={planned:'Queued',dev:'Developing',qa:'Verifying',done:'Shipped',failed:'Failed'};
+    const inner=cards.map(t=>`
+      <div class="card ${esc(t.state)}">
+        <span class="id">${esc(t.id)}${(t.deps&&t.deps.length)?' · needs '+esc(t.deps.join(',')):''}</span>
+        <span class="ti">${esc(t.title)}</span>
+        ${t.retries?`<div class="rw">↻ ${t.retries} rework${t.retries>1?'s':''}</div>`:''}
+        <div class="stg">${STG[t.state]||esc(t.state)}</div>
+        <div class="pg"><i></i></div>
+      </div>`).join('');
+    return `<div class="lane"><h3>${L.label}<b>${cards.length}</b></h3>${inner||''}</div>`;
+  }).join('');
+  document.getElementById('board-log').textContent=(orch.log||[]).slice(-1)[0]||'';
+}
+
+function updateHUD(){
+  const counts={working:0,needs_input:0,completed:0,failed:0};
+  for(const s of sessions) if(counts[s.status]!==undefined) counts[s.status]++;
+  document.getElementById('st-total').textContent=sessions.length;
+  document.getElementById('st-active').textContent=counts.working;
+  document.getElementById('st-input').textContent=counts.needs_input;
+  document.getElementById('st-done').textContent=counts.completed;
+  document.getElementById('st-input-wrap').classList.toggle('alert',counts.needs_input>0);
+  document.title=(counts.needs_input?`(${counts.needs_input} ✋) `:'')+'Agent Office';
+}
+
+function renderBrain(){
+  const dirs=Object.keys(knowledge);
+  const tabs=document.getElementById('brain-tabs');
+  if(!dirs.length){
+    tabs.innerHTML='';
+    document.getElementById('brain-know').innerHTML='<div class="meta">no projects observed yet — dispatch an agent and the office starts learning its folder.</div>';
+    document.getElementById('brain-hist').innerHTML='';
+    return;
+  }
+  if(!curProject||!knowledge[curProject]) curProject=dirs[0];
+  tabs.innerHTML=dirs.map(d=>`<button class="${d===curProject?'on':''}" onclick="pickProject('${esc(d)}')">${esc(base(d))}</button>`).join('');
+
+  const k=knowledge[curProject];
+  const know=document.getElementById('brain-know');
+  know.innerHTML=`
+    <div class="meta">
+      <span>${esc(curProject)}</span>
+      <span>· ${k.stats?.completed||0} done / ${k.stats?.failed||0} failed</span>
+      <span>· ${k.learnedAt?'learned '+age(k.learnedAt)+' ago':'not yet studied'}</span>
+      <button class="learnbtn" ${k.learning?'disabled':''} onclick="learn('${esc(curProject)}')">${k.learning?'STUDYING…':'⟳ LEARN THIS FOLDER'}</button>
+    </div>
+    <pre>${esc(k.summary || (k.learning?'reading the codebase with `claude -p`…':'press LEARN — the office sends a headless `claude -p` into this folder and stores what it finds.'))}</pre>
+    <div class="xpbar">
+      ${['planning','developer','tester'].map(team=>`<span class="xpteam"><i style="width:7px;height:7px;border-radius:2px;background:${ZONECOL[team]};display:inline-block"></i>${team}: <b>${LVL(k.teamXP?.[team]||0)}</b> (${k.teamXP?.[team]||0}xp)</span>`).join('')}
+    </div>`;
+  const hist=document.getElementById('brain-hist');
+  const rows=(k.tasks||[]).slice(0,8).map(task=>`
+    <li><i style="background:${task.outcome==='completed'?'var(--ok)':'var(--err)'}"></i>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(task.name)}</span>
+      <span class="t">${age(task.at)} ago</span></li>`).join('');
+  hist.innerHTML=`<h3>Recent outcomes</h3><ul>${rows||'<li style="border:none;color:var(--faint)">nothing finished here yet</li>'}</ul>`;
+}
+function pickProject(d){curProject=d;renderBrain();}
+async function learn(cwd){
+  if(DEMO){knowledge[cwd].learning=true;renderBrain();
+    setTimeout(()=>{knowledge[cwd].learning=false;knowledge[cwd].summary='• (demo) a real run shells `claude -p` inside '+cwd+' and stores the brief here';knowledge[cwd].learnedAt=Date.now();renderBrain();},1500);return;}
+  knowledge[cwd]={...knowledge[cwd],learning:true};renderBrain();
+  await fetch('/api/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cwd})});
+}
+
+/* ===================================================================== *
+ *  POLL + DRAWER                                                         *
+ * ===================================================================== */
+async function poll(){
+  const live=document.getElementById('live'),banner=document.getElementById('banner');
+  try{
+    const r=await fetch('/api/state'+(DEMO?'?demo=1':''));
+    const data=await r.json();
+    sessions=data.sessions||[]; knowledge=data.knowledge||{}; orch=data.orch||null;
+    if(data.error){banner.style.display='block';
+      banner.innerHTML='⚠ '+esc(data.error)+'<br>Check <code>claude</code> is on PATH and run <code>claude update</code>. Or preview the <a href="/?demo=1">demo office</a>.';
+    } else banner.style.display='none';
+    live.classList.remove('err');
+    document.getElementById('live-label').textContent=DEMO?'DEMO OFFICE':'LIVE · 5s';
+    syncChars(); updateHUD(); renderBoard(); renderBrain();
+  }catch(e){
+    live.classList.add('err');
+    document.getElementById('live-label').textContent='SERVER OFFLINE';
+  }
+}
+
+async function openDrawer(id){
+  const s=sessions.find(x=>x.id===id) || (chars[id]&&chars[id].session);
+  document.getElementById('d-title').textContent=s?s.name:id;
+  document.getElementById('d-cmd').innerHTML=id?`attach: <code>claude attach ${esc(id)}</code> · stop: <code>claude stop ${esc(id)}</code>`:'';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+  const pre=document.getElementById('d-logs');pre.textContent='loading work log…';
+  if(DEMO){pre.textContent='[demo] real sessions stream `claude logs '+id+'` output here';return;}
+  try{const r=await fetch('/api/logs/'+encodeURIComponent(id));const d=await r.json();
+    pre.textContent=d.logs||d.error||'(no output yet)';pre.scrollTop=pre.scrollHeight;
+  }catch(e){pre.textContent='failed: '+e.message}
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+
+poll(); setInterval(poll,5000);
+</script>
+</body>
+</html>

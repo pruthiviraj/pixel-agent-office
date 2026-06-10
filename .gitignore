@@ -1,0 +1,15 @@
+# runtime state written by the orchestrator + server
+data/
+pm-output.txt
+
+# lessons file is created in the TARGET project, but ignore it here too
+# (e.g. when you --dry-run with --project .)
+.orch-lessons.md
+
+# node / editor / os
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
