@@ -38,6 +38,8 @@ const DATA_DIR = process.env.PAO_DATA_DIR
   ? path.resolve(process.env.PAO_DATA_DIR)
   : path.join(os.homedir(), ".pixel-agent-office", "data");
 const KNOWLEDGE_FILE = path.join(DATA_DIR, "knowledge.json");
+const ROSTER_FILE = path.join(DATA_DIR, "roster.json");        // per-project crew (written by orchestrate.js)
+function loadRoster() { try { return JSON.parse(fs.readFileSync(ROSTER_FILE, "utf8")); } catch { return {}; } }
 const JOBS_DIR = path.join(
   process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude"),
   "jobs"
@@ -352,6 +354,16 @@ const DEMO = {
       ],
       stats: { completed: 14, failed: 3 },
       teamXP: { planning: 4, developer: 8, tester: 2, unassigned: 0 },
+      roster: {
+        planning:  [{ name: "Maya", role: "planning", xp: 7, tasks: 7, sprints: 3 }],
+        developer: [
+          { name: "Ada",   role: "developer", xp: 22, tasks: 11, sprints: 3 },
+          { name: "Linus", role: "developer", xp: 9,  tasks: 5,  sprints: 2 },
+          { name: "Grace", role: "developer", xp: 2,  tasks: 1,  sprints: 1 }],
+        tester: [
+          { name: "Quinn", role: "tester", xp: 12, tasks: 12, sprints: 3 },
+          { name: "Bly",   role: "tester", xp: 4,  tasks: 4,  sprints: 2 }],
+      },
       firstSeen: Date.now() - 21 * 86400e3,
     },
     "~/projects/site": {
@@ -524,11 +536,19 @@ const server = http.createServer(async (req, res) => {
           });
         }
       }
+      // fold each project's persistent crew (roster.json) into its brain entry
+      const roster = loadRoster();
+      const knowOut = Object.assign({}, knowledge);
+      for (const p in roster) {
+        knowOut[p] = Object.assign(
+          { summary: null, learnedAt: null, learning: false, tasks: [], stats: { completed: 0, failed: 0 }, teamXP: {} },
+          knowOut[p] || {}, { roster: roster[p] });
+      }
       return json(200, {
         demo: false,
         autoLearn: AUTO_LEARN,
         sessions: merged,
-        knowledge,
+        knowledge: knowOut,
         orch: showBoard ? team : null,
         error: cache.error,
       });

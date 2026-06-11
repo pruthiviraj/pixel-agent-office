@@ -121,6 +121,18 @@ header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 26px
 .xpbar{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
 .xpbar .xpteam{font-size:10.5px;color:var(--dim);display:flex;gap:6px;align-items:center}
 .xpbar .xpteam b{font-family:var(--disp)}
+/* persistent crew roster */
+.roster{display:flex;flex-direction:column;gap:13px;margin-top:12px}
+.roster .rteam h4{font-family:var(--disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:5px}
+.ragent{padding:5px 0;border-bottom:1px dashed #1a232c}
+.ragent:last-child{border-bottom:none}
+.ragent .top{display:flex;gap:8px;align-items:baseline}
+.ragent .rn{font-family:var(--disp);color:var(--ink);font-size:12px}
+.ragent .rl{font-family:var(--disp);font-size:9px;letter-spacing:.08em}
+.ragent .rx{margin-left:auto;font-size:10px;color:var(--faint)}
+.ragent .rbar{height:4px;border-radius:2px;background:#1a232b;overflow:hidden;margin-top:4px}
+.ragent .rbar i{display:block;height:100%;border-radius:2px;transition:width .5s ease}
+.brain-err{color:var(--err);font-size:11px;margin-top:6px}
 
 /* ============ drawer ============ */
 #drawer{position:fixed;inset:0 0 0 auto;width:min(620px,92vw);background:var(--floor);border-left:1px solid var(--line);
@@ -288,7 +300,9 @@ const DEMO = new URLSearchParams(location.search).get('demo')==='1';
 const ZONECOL = {planning:'#ffb454',developer:'#4fd6be',tester:'#c792ea',unassigned:'#7d8d99'};
 const HAIR = ['#2c2c34','#4a3120','#6b6b75','#1f3a4a','#5a2a3a','#3a4a20','#101216','#7a5230'];
 const SKIN = ['#e8b890','#c89070','#8a5a3b','#f0c8a0','#a06a45','#d8a878'];
-const LVL = xp => xp>=20?'STAFF':xp>=8?'SENIOR':xp>=3?'MID':'JUNIOR';
+const LVL = xp => xp>=40?'PRINCIPAL':xp>=20?'STAFF':xp>=8?'SENIOR':xp>=3?'MID':'JUNIOR';
+const LVL_NEXT = xp => xp>=40?null:xp>=20?40:xp>=8?20:xp>=3?8:3;   // xp at next tier (null = maxed)
+const LVL_BASE = xp => xp>=40?40:xp>=20?20:xp>=8?8:xp>=3?3:0;       // floor of current tier
 
 let sessions=[], knowledge={}, curProject=null, orch=null;
 
@@ -745,6 +759,27 @@ function updateHUD(){
   document.title=(counts.needs_input?`(${counts.needs_input} ✋) `:'')+'Agent Office';
 }
 
+function renderRoster(k){
+  const teams=[['planning','Planning'],['developer','Developers'],['tester','QA']];
+  const hasRoster=k.roster && teams.some(([t])=>(k.roster[t]||[]).length);
+  if(!hasRoster){   // legacy aggregate XP (e.g. `claude --bg` sessions, no sprint crew yet)
+    return `<div class="xpbar">${['planning','developer','tester'].map(team=>`<span class="xpteam"><i style="width:7px;height:7px;border-radius:2px;background:${ZONECOL[team]};display:inline-block"></i>${team}: <b>${LVL(k.teamXP?.[team]||0)}</b> (${k.teamXP?.[team]||0}xp)</span>`).join('')}</div>`;
+  }
+  return `<div class="roster">${teams.map(([team,label])=>{
+    const list=k.roster[team]||[]; if(!list.length) return '';
+    const col=ZONECOL[team];
+    return `<div class="rteam"><h4 style="color:${col}">${label}</h4>${list.map(a=>{
+      const xp=a.xp||0, lvl=LVL(xp), base=LVL_BASE(xp), next=LVL_NEXT(xp);
+      const pct=next==null?100:Math.max(4,Math.round(((xp-base)/(next-base))*100));
+      const toNext=next==null?'max level':`${next-xp} xp → ${LVL(next)}`;
+      return `<div class="ragent">
+        <div class="top"><span class="rn">${esc(a.name)}</span><span class="rl" style="color:${col}">${lvl}</span><span class="rx">${xp} xp · ${toNext}</span></div>
+        <div class="rbar"><i style="width:${pct}%;background:${col}"></i></div>
+        <div class="rx" style="margin-top:3px">${a.sprints||0} sprint${(a.sprints||0)===1?'':'s'} · ${a.tasks||0} task${(a.tasks||0)===1?'':'s'} on this project</div>
+      </div>`;
+    }).join('')}</div>`;
+  }).join('')}</div>`;
+}
 function renderBrain(){
   const dirs=Object.keys(knowledge);
   const tabs=document.getElementById('brain-tabs');
@@ -767,9 +802,8 @@ function renderBrain(){
       <button class="learnbtn" ${k.learning?'disabled':''} onclick="learn('${esc(curProject)}')">${k.learning?'STUDYING…':'⟳ LEARN THIS FOLDER'}</button>
     </div>
     <pre>${esc(k.summary || (k.learning?'reading the codebase with `claude -p`…':'press LEARN — the office sends a headless `claude -p` into this folder and stores what it finds.'))}</pre>
-    <div class="xpbar">
-      ${['planning','developer','tester'].map(team=>`<span class="xpteam"><i style="width:7px;height:7px;border-radius:2px;background:${ZONECOL[team]};display:inline-block"></i>${team}: <b>${LVL(k.teamXP?.[team]||0)}</b> (${k.teamXP?.[team]||0}xp)</span>`).join('')}
-    </div>`;
+    ${k.lastError?`<div class="brain-err">⚠ learn failed: ${esc(k.lastError)}<br><span style="color:var(--faint)">the viewer shells <code>claude -p</code> in this folder — it must be on PATH and logged in (Windows also needs git-bash).</span></div>`:''}
+    ${renderRoster(k)}`;
   const hist=document.getElementById('brain-hist');
   const rows=(k.tasks||[]).slice(0,8).map(task=>`
     <li><i style="background:${task.outcome==='completed'?'var(--ok)':'var(--err)'}"></i>

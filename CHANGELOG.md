@@ -5,7 +5,13 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and 
 
 ## [0.3.1] — 2026-06-11
 
+### Added
+
+- **Persistent per-project crew with XP + leveling** (`orchestrate.js`, `server.js`, Project Brain). Each project keeps a named team (`roster.json`, keyed by project path) that **recurs across sprints**: agents are assigned to PM/dev/QA work, earn XP for **shipped** tasks (dev +2, tester +1, PM +1 per shipped task), and level up **Junior → Mid → Senior → Staff → Principal** (0 / 3 / 8 / 20 / 40 xp). Fixed crew sized to the concurrency cap; same names return more senior each run. The office **Project Brain** now shows the roster (name · level · xp · bar-to-next-tier · sprints/tasks of tenure) instead of bare aggregate XP, and promotions log live ("★ Maya promoted: MID → SENIOR").
+
 ### Fixed
+
+- **LEARN-folder failures are now visible** (Project Brain) — the button shells a headless `claude -p` in the folder; if that fails it stored `lastError` silently. The Brain now surfaces the error + the requirement (claude on PATH + logged in, git-bash on Windows). XP also no longer requires `claude --bg` named sessions — orchestrated sprint work feeds the roster directly.
 
 - **Viewer and sprint now share one state dir** (`orchestrate.js`, `server.js`) — state (`team.json`, `history/`, control channel) was keyed off `__dirname/data`, so when `npx github:...` resolved the viewer and the sprint to different cache installs they wrote/read different `data/` dirs and the office fell back to its built-in **demo** agents while a real sprint was running. `DATA_DIR` now resolves to an install-location-independent `~/.pixel-agent-office/data` (override with `PAO_DATA_DIR`); both startup banners print the resolved path.
 
