@@ -1,2342 +1,837 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Pixel Agent Office</title>
-    <script src="/auth.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg: #0b0e12;
-        --panel: #11161d;
-        --line: #212c36;
-        --ink: #d9e3e9;
-        --dim: #71828e;
-        --faint: #46555f;
-        --plan: #ffb454;
-        --dev: #4fd6be;
-        --test: #c792ea;
-        --misc: #7d8d99;
-        --ok: #62d196;
-        --warn: #ffd166;
-        --err: #ff6b6b;
-        --idle: #5b6b76;
-        --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-        --pixel: "Press Start 2P", ui-monospace, monospace;
-      }
-      body[data-theme="night"] {
-        --bg: #05070b;
-        --panel: #0a0e14;
-        --line: #16202b;
-        --ink: #c2cdd6;
-        --dim: #5d6d79;
-        --faint: #38454f;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--ink);
-        font-family: var(--mono);
-        font-size: 13px;
-        overflow-x: hidden;
-        min-height: 100vh;
-      }
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pixel Agent Office</title>
+<script src="/auth.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e12; --floor:#11161d; --line:#212c36; --ink:#d9e3e9; --dim:#71828e; --faint:#46555f;
+  --plan:#ffb454; --dev:#4fd6be; --test:#c792ea; --misc:#7d8d99;
+  --ok:#62d196; --warn:#ffd166; --err:#ff6b6b; --idle:#5b6b76;
+  --mono:'IBM Plex Mono',monospace; --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13px;overflow-x:hidden}
 
-      header {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        flex-wrap: wrap;
-        padding: 12px 26px;
-        border-bottom: 1px solid var(--line);
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        background: rgba(11, 14, 18, 0.92);
-        backdrop-filter: blur(8px);
-      }
-      .brand h1 {
-        font-family: var(--pixel);
-        font-size: 13px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--ink);
-        text-shadow: 2px 2px 0 #000;
-      }
-      .brand h1 em {
-        font-style: normal;
-        color: var(--dev);
-      }
-      .brand .sub {
-        font-family: var(--pixel);
-        font-size: 7px;
-        color: var(--faint);
-        letter-spacing: 0.16em;
-        margin-top: 6px;
-      }
-      .stats {
-        display: flex;
-        gap: 8px;
-        margin-left: auto;
-        flex-wrap: wrap;
-      }
-      .stat {
-        border: 1px solid var(--line);
-        background: var(--panel);
-        border-radius: 0;
-        padding: 8px 12px;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        font-family: var(--pixel);
-        font-size: 8px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--dim);
-        image-rendering: pixelated;
-      }
-      .stat b {
-        font-size: 11px;
-        color: var(--ink);
-      }
-      .stat.alert {
-        border-color: rgba(255, 209, 102, 0.55);
-        box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.25);
-      }
-      .stat.alert b {
-        color: var(--warn);
-      }
-      .live {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--dim);
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.14em;
-      }
-      .live i {
-        width: 8px;
-        height: 8px;
-        background: var(--ok);
-        box-shadow: 0 0 0 2px rgba(98, 209, 150, 0.18);
-        animation: pulse 1.6s steps(2) infinite;
-      }
-      .live.err i {
-        background: var(--err);
-        box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.18);
-      }
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.4;
-        }
-      }
+/* ============ header ============ */
+header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 26px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;
+  background:rgba(11,14,18,.92);backdrop-filter:blur(8px)}
+.brand h1{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.brand h1 em{font-style:normal;color:var(--dev)}
+.brand .sub{color:var(--faint);font-size:10.5px;letter-spacing:.08em}
+.stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.stat{border:1px solid var(--line);background:var(--floor);border-radius:4px;padding:6px 12px;
+  display:flex;gap:8px;align-items:center;font-size:11.5px}
+.stat b{font-family:var(--disp);font-size:14px}
+.stat.alert{border-color:rgba(255,209,102,.5);box-shadow:0 0 14px rgba(255,209,102,.15)}
+.stat.alert b{color:var(--warn)}
+.live{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:10.5px;letter-spacing:.1em}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.6s infinite}
+.live.err i{background:var(--err)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 
-      #banner {
-        display: none;
-        margin: 12px 26px 0;
-        padding: 10px 15px;
-        border: 1px solid rgba(255, 107, 107, 0.4);
-        background: rgba(255, 107, 107, 0.06);
-        border-radius: 0;
-        color: #ffb3b3;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-      #banner code {
-        color: var(--ink);
-        background: rgba(255, 255, 255, 0.07);
-        padding: 1px 5px;
-      }
+#banner{display:none;margin:12px 26px 0;padding:10px 15px;border:1px solid rgba(255,107,107,.4);
+  background:rgba(255,107,107,.06);border-radius:4px;color:#ffb3b3;font-size:12px;line-height:1.6}
+#banner code{color:var(--ink);background:rgba(255,255,255,.07);padding:1px 5px;border-radius:3px}
+#banner a{color:var(--warn)}
 
-      /* ====================== LIVE HUD ====================== */
-      #hud {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin: 12px 26px 0;
-        padding: 8px 12px;
-        border: 1px solid var(--line);
-        background: var(--panel);
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.1em;
-        color: var(--dim);
-      }
-      #hud .hcell {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 4px 8px;
-        border: 1px solid transparent;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
-      #hud .hcell b {
-        font-size: 10px;
-        color: var(--ink);
-        font-weight: 400;
-      }
-      #hud .hcell b.money {
-        color: var(--warn);
-      }
-      #hud .hcell b.good {
-        color: var(--ok);
-      }
-      #hud .hcell b.bad {
-        color: var(--err);
-      }
-      #hud .hsp {
-        flex: 1;
-      }
-      #hud .bbar {
-        display: inline-block;
-        width: 90px;
-        height: 8px;
-        border: 1px solid var(--line);
-        background: #0a0e13;
-        overflow: hidden;
-        vertical-align: middle;
-      }
-      #hud .bbar i {
-        display: block;
-        height: 100%;
-        width: 0%;
-        background: var(--ok);
-        transition:
-          width 0.6s ease,
-          background 0.6s ease;
-      }
-      #hud .bbar i.amber {
-        background: var(--warn);
-      }
-      #hud .bbar i.red {
-        background: var(--err);
-      }
-      .hbtn {
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--ink);
-        background: #0d141b;
-        border: 1px solid var(--line);
-        padding: 7px 10px;
-        cursor: pointer;
-        box-shadow: 2px 2px 0 #000;
-      }
-      .hbtn:hover:not(:disabled) {
-        border-color: var(--dev);
-        color: var(--dev);
-      }
-      .hbtn:active:not(:disabled) {
-        transform: translate(1px, 1px);
-        box-shadow: 1px 1px 0 #000;
-      }
-      .hbtn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-      .hbtn.danger:hover:not(:disabled) {
-        border-color: var(--err);
-        color: var(--err);
-      }
-      #present-hint {
-        display: none;
-        color: var(--faint);
-      }
+/* ============ the animated office (canvas) ============ */
+#stage{position:relative;margin:16px 26px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 0%, #121922 0%, #0a0e13 70%);
+  aspect-ratio:1280/760;max-height:76vh;animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1}}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:default}
+#tip{position:absolute;pointer-events:none;z-index:5;display:none;max-width:280px;
+  background:rgba(10,14,19,.95);border:1px solid var(--line);border-radius:5px;padding:7px 10px;
+  font-size:11px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#tip b{font-family:var(--disp);font-size:11.5px}
+#tip .s{color:var(--dim);display:block;margin-top:2px}
+#legend{position:absolute;left:14px;bottom:12px;display:flex;gap:14px;flex-wrap:wrap;
+  font-size:10px;color:var(--faint);background:rgba(10,14,19,.6);border:1px solid var(--line);
+  border-radius:5px;padding:6px 11px;backdrop-filter:blur(3px)}
+#legend span{display:flex;align-items:center;gap:5px}
+#legend i{width:7px;height:7px;border-radius:50%}
 
-      /* ====================== STAGE ====================== */
-      #stage {
-        position: relative;
-        margin: 16px 26px;
-        border: 2px solid var(--line);
-        overflow: hidden;
-        background: #06090d;
-        aspect-ratio: 40/24;
-        max-height: 78vh;
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
-      }
-      #scene {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-        image-rendering: pixelated;
-        cursor: crosshair;
-        object-fit: contain;
-      }
-      /* faint CRT scanlines overlay (clean theme keeps this subtle) */
-      #stage::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-          0deg,
-          rgba(0, 0, 0, 0.18) 0 2px,
-          transparent 2px 4px
-        );
-        mix-blend-mode: multiply;
-        opacity: 0.45;
-      }
-      /* CRT theme: heavier scanlines + phosphor glow + vignette */
-      body[data-theme="crt"] #stage::after {
-        opacity: 0.8;
-        background:
-          repeating-linear-gradient(
-            0deg,
-            rgba(0, 0, 0, 0.28) 0 2px,
-            transparent 2px 4px
-          ),
-          radial-gradient(
-            ellipse at center,
-            transparent 58%,
-            rgba(0, 0, 0, 0.42) 100%
-          );
-      }
-      body[data-theme="crt"] #scene {
-        filter: saturate(1.25) contrast(1.08) brightness(1.05);
-      }
-      body[data-theme="crt"] #stage {
-        box-shadow:
-          0 0 24px rgba(79, 214, 190, 0.18),
-          inset 0 0 60px rgba(0, 0, 0, 0.55);
-        border-color: #2c3a46;
-      }
-      body[data-theme="night"] #stage {
-        box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.6);
-      }
+/* ============ sprint board (orchestration) ============ */
+#board{display:none;margin:14px 26px;border:1px solid var(--line);border-radius:8px;background:var(--floor);overflow:hidden}
+#board .bhead{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#board .bhead h2{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--plan)}
+#board .bhead .epic{color:var(--dim);font-size:11.5px;flex:1;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#board .bhead .ph{font-family:var(--disp);font-size:10px;letter-spacing:.12em;padding:3px 9px;border-radius:3px;border:1px solid var(--line);color:var(--dim)}
+#board .bhead .ph.run{color:var(--dev);border-color:rgba(79,214,190,.4)}
+#board .bhead .ph.done{color:var(--ok);border-color:rgba(98,209,150,.4)}
+#board .lanes{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+@media(max-width:820px){#board .lanes{grid-template-columns:1fr 1fr}}
+#board .lane{border-right:1px solid var(--line);min-height:90px;padding:10px 12px}
+#board .lane:last-child{border-right:none}
+#board .lane h3{font-size:10px;letter-spacing:.13em;color:var(--faint);text-transform:uppercase;margin-bottom:9px;font-family:var(--disp);display:flex;gap:6px;align-items:center}
+#board .lane h3 b{margin-left:auto;color:var(--dim);font-weight:400}
+#board .card{border:1px solid var(--line);border-left:3px solid var(--faint);border-radius:4px;
+  padding:7px 9px;margin-bottom:7px;background:#0d141b;font-size:11.5px;line-height:1.4}
+#board .card .id{font-family:var(--disp);font-size:9.5px;color:var(--faint);letter-spacing:.08em}
+#board .card .ti{color:var(--ink);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#board .card .rw{color:var(--warn);font-size:9.5px;margin-top:3px}
+#board .card.planned{border-left-color:var(--idle)}
+#board .card.dev{border-left-color:var(--dev);box-shadow:0 0 0 1px rgba(79,214,190,.08)}
+#board .card.qa{border-left-color:var(--test)}
+#board .card.done{border-left-color:var(--ok);opacity:.85}
+#board .card.failed{border-left-color:var(--err)}
+#board .card.cancelled{border-left-color:var(--warn);opacity:.7}
+#board .card .pg{height:3px;border-radius:2px;background:#1a232b;margin-top:7px;overflow:hidden}
+#board .card .pg i{display:block;height:100%;border-radius:2px;background:var(--faint);transition:width .5s ease}
+#board .card.planned .pg i{width:8%;background:var(--idle)}
+#board .card.dev .pg i{width:42%;background:var(--dev);animation:pgpulse 1.6s ease-in-out infinite}
+#board .card.qa .pg i{width:76%;background:var(--test);animation:pgpulse 1.6s ease-in-out infinite}
+#board .card.done .pg i{width:100%;background:var(--ok)}
+#board .card.failed .pg i{width:100%;background:var(--err)}
+#board .card.cancelled .pg i{width:100%;background:var(--warn)}
+#board .card .stg{font-size:8.5px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-top:4px;font-family:var(--disp)}
+@keyframes pgpulse{0%,100%{opacity:1}50%{opacity:.55}}
+#board .blog{padding:9px 16px;border-top:1px solid var(--line);color:var(--faint);font-size:10.5px;
+  font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-      #paused {
-        position: absolute;
-        top: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: none;
-        z-index: 6;
-        font-family: var(--pixel);
-        font-size: 11px;
-        letter-spacing: 0.18em;
-        color: var(--warn);
-        background: rgba(10, 14, 19, 0.9);
-        border: 1px solid rgba(255, 209, 102, 0.6);
-        padding: 10px 16px;
-        animation: pulse 1.6s steps(2) infinite;
-        text-shadow: 2px 2px 0 #000;
-      }
-      #replaychip {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        display: none;
-        z-index: 6;
-        font-family: var(--pixel);
-        font-size: 8px;
-        letter-spacing: 0.16em;
-        color: var(--err);
-        background: rgba(10, 14, 19, 0.85);
-        border: 1px solid rgba(255, 107, 107, 0.55);
-        padding: 7px 10px;
-      }
-      #replaychip i {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        background: var(--err);
-        margin-right: 6px;
-        animation: pulse 1.2s steps(2) infinite;
-      }
+/* ============ project brain ============ */
+#brain{margin:14px 26px 80px;border:1px solid var(--line);border-radius:8px;background:var(--floor);overflow:hidden}
+#brain .bhead{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#brain .bhead h2{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dev)}
+#brain .tabs{display:flex;gap:6px;flex-wrap:wrap}
+#brain .tabs button{background:none;border:1px solid var(--line);border-radius:3px;color:var(--dim);
+  font-family:var(--mono);font-size:11px;padding:4px 11px;cursor:pointer}
+#brain .tabs button.on{color:var(--ink);border-color:var(--dev);background:rgba(79,214,190,.07)}
+#brain .bbody{display:grid;grid-template-columns:1.5fr 1fr;gap:0}
+@media(max-width:860px){#brain .bbody{grid-template-columns:1fr}}
+#brain .know{padding:14px 18px;border-right:1px solid var(--line);min-height:130px}
+#brain .know pre{white-space:pre-wrap;color:#b9c8d2;font-size:12px;line-height:1.7;font-family:var(--mono)}
+#brain .know .meta{color:var(--faint);font-size:10.5px;margin-bottom:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#brain .know .learnbtn{background:rgba(79,214,190,.08);border:1px solid rgba(79,214,190,.45);color:var(--dev);
+  font-family:var(--disp);letter-spacing:.12em;font-size:10.5px;padding:5px 13px;border-radius:3px;cursor:pointer}
+#brain .know .learnbtn:hover{background:rgba(79,214,190,.16)}
+#brain .know .learnbtn[disabled]{opacity:.45;cursor:wait}
+#brain .hist{padding:14px 18px}
+#brain .hist h3{font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;margin-bottom:9px;font-family:var(--disp)}
+#brain .hist ul{list-style:none}
+#brain .hist li{display:flex;gap:8px;align-items:center;padding:4px 0;font-size:11.5px;color:var(--dim);border-bottom:1px dashed #1a232c}
+#brain .hist li i{width:6px;height:6px;border-radius:50%;flex:none}
+#brain .hist li .t{margin-left:auto;color:var(--faint);font-size:10px;flex:none}
+.xpbar{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.xpbar .xpteam{font-size:10.5px;color:var(--dim);display:flex;gap:6px;align-items:center}
+.xpbar .xpteam b{font-family:var(--disp)}
 
-      #tip {
-        position: absolute;
-        pointer-events: none;
-        z-index: 5;
-        display: none;
-        max-width: 280px;
-        background: rgba(10, 14, 19, 0.96);
-        border: 1px solid var(--line);
-        padding: 8px 10px;
-        font-family: var(--mono);
-        font-size: 11px;
-        line-height: 1.45;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      }
-      #tip b {
-        font-family: var(--pixel);
-        font-size: 8px;
-        letter-spacing: 0.08em;
-        color: var(--ink);
-        display: block;
-        margin-bottom: 3px;
-      }
-      #tip .meta {
-        color: var(--dim);
-        font-size: 9px;
-        margin-top: 3px;
-        font-family: var(--pixel);
-        letter-spacing: 0.08em;
-      }
+/* ============ drawer ============ */
+#drawer{position:fixed;inset:0 0 0 auto;width:min(620px,92vw);background:var(--floor);border-left:1px solid var(--line);
+  transform:translateX(102%);transition:transform .25s ease;z-index:40;display:flex;flex-direction:column;
+  box-shadow:-30px 0 60px rgba(0,0,0,.55)}
+#drawer.open{transform:none}
+#drawer .dhead{padding:15px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+#drawer .dhead h2{font-family:var(--disp);font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer .dhead button{background:none;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);padding:5px 11px;border-radius:3px;cursor:pointer}
+#drawer .dcmd{padding:9px 20px;color:var(--faint);font-size:11px;border-bottom:1px solid var(--line)}
+#drawer .dcmd code{color:var(--dim)}
+#drawer pre{flex:1;overflow:auto;padding:16px 20px;font-size:12px;line-height:1.65;color:#b9c8d2;white-space:pre-wrap;word-break:break-word}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s;z-index:35}
+#scrim.open{opacity:1;pointer-events:auto}
 
-      #legend {
-        position: absolute;
-        left: 12px;
-        bottom: 10px;
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.12em;
-        color: var(--faint);
-        background: rgba(10, 14, 19, 0.7);
-        border: 1px solid var(--line);
-        padding: 7px 10px;
-        backdrop-filter: blur(3px);
-      }
-      #legend span {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      #legend i {
-        width: 9px;
-        height: 9px;
-        display: inline-block;
-        image-rendering: pixelated;
-      }
+footer{position:fixed;bottom:0;left:0;right:0;padding:7px 26px;font-size:10px;color:var(--faint);
+  border-top:1px solid var(--line);background:rgba(11,14,18,.94);backdrop-filter:blur(4px);display:flex;gap:18px;flex-wrap:wrap;z-index:30}
+footer code{color:var(--dim)}
+/* ============ live HUD + control plane (office-extras.js) ============ */
+#hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 26px 0;padding:8px 13px;
+  border:1px solid var(--line);border-radius:8px;background:var(--floor);font-size:11px;color:var(--dim)}
+#hud .hcell{display:flex;align-items:center;gap:6px;letter-spacing:.04em}
+#hud .hcell b{font-family:var(--disp);color:var(--ink);font-size:12.5px}
+#hud .hcell b.money,#hud .hcell b.good{color:var(--ok)}
+#hud .hcell b.bad{color:var(--err)}
+#hud .bbar{display:inline-block;width:80px;height:6px;border-radius:3px;background:#1a232b;overflow:hidden;vertical-align:middle}
+#hud .bbar i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s ease}
+#hud .bbar i.amber{background:var(--warn)} #hud .bbar i.red{background:var(--err)}
+#hud .hsp{flex:1}
+.hbtn{font-family:var(--disp);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
+  background:#0d141b;border:1px solid var(--line);border-radius:4px;padding:6px 11px;cursor:pointer}
+.hbtn:hover:not(:disabled){border-color:var(--dev);color:var(--dev)}
+.hbtn:disabled{opacity:.4;cursor:not-allowed}
+.hbtn.danger:hover:not(:disabled){border-color:var(--err);color:var(--err)}
+#present-hint{font-size:9.5px;color:var(--faint);letter-spacing:.1em;display:none}
+body.present #present-hint{display:inline}
+#paused{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:8;
+  background:rgba(8,11,15,.55);font-family:var(--disp);font-size:30px;letter-spacing:.2em;color:var(--warn)}
+#toast{position:fixed;right:18px;bottom:54px;z-index:60;display:none;max-width:360px;padding:9px 14px;
+  border:1px solid var(--dev);border-radius:5px;background:rgba(13,20,27,.97);color:var(--ink);font-size:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#toast.err{border-color:var(--err);color:#ffb3b3}
+#replaychip{position:absolute;left:14px;top:12px;display:none;align-items:center;gap:6px;z-index:6;
+  font-size:10px;letter-spacing:.12em;color:var(--test);background:rgba(10,14,19,.7);border:1px solid var(--line);
+  border-radius:5px;padding:5px 10px}
+#replaychip i{width:7px;height:7px;border-radius:50%;background:var(--test)}
+#replaybar{display:none;align-items:center;gap:12px;margin:12px 26px 0;padding:9px 14px;border:1px solid var(--line);
+  border-radius:8px;background:var(--floor);font-size:11px;color:var(--dim)}
+#replaybar .rp-epic{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:30vw}
+#replaybar input[type=range]{flex:1;accent-color:var(--test)}
+#replaybar button{font-family:var(--disp);font-size:10.5px;letter-spacing:.1em;color:var(--ink);background:#0d141b;
+  border:1px solid var(--line);border-radius:4px;padding:5px 11px;cursor:pointer}
+#replaybar a{color:var(--warn);font-size:11px;margin-left:auto}
+body[data-theme=night]{--bg:#05070b;--floor:#0a0e14;--line:#16202b}
+body[data-theme=crt]{filter:saturate(1.1) contrast(1.04)}
+body.present header,body.present #banner,body.present #board,body.present #brain,
+body.present footer,body.present #legend{display:none!important}
+body.present #stage{position:fixed;inset:0;margin:0;border:none;border-radius:0;max-height:none;aspect-ratio:auto;z-index:40}
+body.present #hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;margin:0}
+</style>
+</head>
+<body>
 
-      #zonelabel {
-        position: absolute;
-        right: 12px;
-        bottom: 10px;
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.12em;
-        color: var(--dim);
-        background: rgba(10, 14, 19, 0.7);
-        border: 1px solid var(--line);
-        padding: 7px 10px;
-      }
-      #zonelabel b {
-        color: var(--ink);
-      }
+<header>
+  <div class="brand">
+    <h1>Pixel <em>Agent Office</em></h1>
+    <div class="sub">claude code · live floor view</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span>ON SHIFT</span><b id="st-total">0</b></div>
+    <div class="stat"><span>WORKING</span><b id="st-active">0</b></div>
+    <div class="stat" id="st-input-wrap"><span>HANDS UP</span><b id="st-input">0</b></div>
+    <div class="stat"><span>DONE</span><b id="st-done">0</b></div>
+    <div class="live" id="live"><i></i><span id="live-label">LIVE · 5s</span></div>
+  </div>
+</header>
 
-      #empty {
-        position: absolute;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-        font-family: var(--pixel);
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        color: var(--dim);
-        padding: 24px;
-        z-index: 4;
-      }
-      #empty b {
-        color: var(--ink);
-        font-size: 11px;
-        display: block;
-        margin-bottom: 6px;
-      }
-      #empty code {
-        font-family: var(--mono);
-        background: rgba(255, 255, 255, 0.06);
-        padding: 3px 6px;
-        color: var(--ink);
-        font-size: 11px;
-        letter-spacing: 0;
-      }
+<div id="banner"></div>
 
-      /* ====================== replay bar ====================== */
-      #replaybar {
-        display: none;
-        align-items: center;
-        gap: 12px;
-        margin: 0 26px 14px;
-        padding: 9px 12px;
-        border: 1px solid rgba(255, 107, 107, 0.4);
-        background: var(--panel);
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.1em;
-        color: var(--dim);
-      }
-      #replaybar .badge {
-        color: var(--err);
-        border: 1px solid rgba(255, 107, 107, 0.55);
-        padding: 5px 8px;
-        letter-spacing: 0.16em;
-      }
-      #replaybar input[type="range"] {
-        flex: 1;
-        min-width: 120px;
-        accent-color: var(--err);
-        height: 4px;
-        cursor: pointer;
-      }
-      #replaybar #rp-time {
-        color: var(--ink);
-        font-size: 9px;
-        min-width: 92px;
-        text-align: right;
-      }
-      #replaybar .epic {
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0;
-        color: var(--dim);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 34vw;
-      }
+<div id="hud">
+  <span class="hcell">COST <b class="money" id="h-cost">—</b></span>
+  <span class="hcell">TOK IN <b id="h-tin">—</b> OUT <b id="h-tout">—</b></span>
+  <span class="hcell">DONE <b class="good" id="h-done">—</b></span>
+  <span class="hcell">FAIL <b class="bad" id="h-fail">—</b></span>
+  <span class="hcell">T/HR <b id="h-tph">—</b></span>
+  <span class="hcell">ELAPSED <b id="h-elapsed">—</b></span>
+  <span class="hcell" id="h-budget" style="display:none">BUDGET <span class="bbar"><i id="h-bbar"></i></span> <b id="h-btxt"></b></span>
+  <span class="hsp"></span>
+  <span id="present-hint">ESC TO EXIT</span>
+  <button class="hbtn" id="btn-pause" disabled>PAUSE</button>
+  <button class="hbtn danger" id="btn-cancel" disabled>CANCEL SPRINT</button>
+  <button class="hbtn" id="btn-theme" title="cycle clean / crt / night">THEME: CLEAN</button>
+  <button class="hbtn" id="btn-present" title="key P">PRESENT</button>
+</div>
 
-      /* ====================== sprint board strip ====================== */
-      #board {
-        display: none;
-        margin: 14px 26px;
-        border: 1px solid var(--line);
-        background: var(--panel);
-      }
-      #board .bhead {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--line);
-        flex-wrap: wrap;
-      }
-      #board .bhead h2 {
-        font-family: var(--pixel);
-        font-size: 9px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--plan);
-      }
-      #board .bhead .epic {
-        color: var(--dim);
-        font-size: 11px;
-        flex: 1;
-        min-width: 140px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #board .bhead .ph {
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.12em;
-        padding: 4px 8px;
-        border: 1px solid var(--line);
-        color: var(--dim);
-      }
-      #board .bhead .ph.run {
-        color: var(--dev);
-        border-color: rgba(79, 214, 190, 0.4);
-      }
-      #board .bhead .ph.done {
-        color: var(--ok);
-        border-color: rgba(98, 209, 150, 0.4);
-      }
-      #board .bhead .ph.paused {
-        color: var(--warn);
-        border-color: rgba(255, 209, 102, 0.4);
-      }
-      #board .lanes {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-      }
-      @media (max-width: 820px) {
-        #board .lanes {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-      #board .lane {
-        border-right: 1px solid var(--line);
-        min-height: 88px;
-        padding: 10px 12px;
-      }
-      #board .lane:last-child {
-        border-right: none;
-      }
-      #board .lane h3 {
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.14em;
-        color: var(--faint);
-        text-transform: uppercase;
-        margin-bottom: 9px;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
-      #board .lane h3 b {
-        margin-left: auto;
-        color: var(--dim);
-        font-weight: 400;
-      }
-      #board .card {
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--faint);
-        padding: 7px 9px;
-        margin-bottom: 7px;
-        background: #0d141b;
-        font-size: 11px;
-        line-height: 1.4;
-      }
-      #board .card .id {
-        font-family: var(--pixel);
-        font-size: 7px;
-        color: var(--faint);
-        letter-spacing: 0.08em;
-      }
-      #board .card .ti {
-        color: var(--ink);
-        display: block;
-        margin-top: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      #board .card.planned {
-        border-left-color: var(--idle);
-      }
-      #board .card.dev {
-        border-left-color: var(--dev);
-        box-shadow: 0 0 0 1px rgba(79, 214, 190, 0.08);
-      }
-      #board .card.qa {
-        border-left-color: var(--test);
-      }
-      #board .card.done {
-        border-left-color: var(--ok);
-        opacity: 0.88;
-      }
-      #board .card.failed {
-        border-left-color: var(--err);
-      }
-      #board .card .pg {
-        height: 4px;
-        border: 1px solid var(--line);
-        margin-top: 7px;
-        overflow: hidden;
-        background: #0a0e13;
-        border-radius: 2px;
-      }
-      #board .card .pg i {
-        display: block;
-        height: 100%;
-        background: var(--faint);
-        transition: width 0.6s ease;
-      }
-      #board .card.planned .pg i {
-        width: 8%;
-        background: var(--idle);
-      }
-      #board .card.dev .pg i {
-        width: 42%;
-        background: var(--dev);
-        animation: pgpulse 1.7s ease-in-out infinite;
-      }
-      #board .card.qa .pg i {
-        width: 78%;
-        background: var(--test);
-        animation: pgpulse 1.7s ease-in-out infinite;
-      }
-      #board .card.done .pg i {
-        width: 100%;
-        background: var(--ok);
-      }
-      #board .card.failed .pg i {
-        width: 100%;
-        background: var(--err);
-      }
-      #board .card .stg {
-        font-size: 8px;
-        letter-spacing: 0.12em;
-        color: var(--faint);
-        text-transform: uppercase;
-        margin-top: 4px;
-        font-family: var(--pixel);
-      }
-      #board .card .acts {
-        display: flex;
-        gap: 5px;
-        margin-top: 7px;
-        flex-wrap: wrap;
-      }
-      #board .card .act {
-        font-family: var(--pixel);
-        font-size: 6px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--dim);
-        background: #0a0e13;
-        border: 1px solid var(--line);
-        padding: 4px 6px;
-        cursor: pointer;
-      }
-      #board .card .act:hover:not(:disabled) {
-        color: var(--ink);
-        border-color: var(--dim);
-      }
-      #board .card .act.ok:hover:not(:disabled) {
-        color: var(--ok);
-        border-color: var(--ok);
-      }
-      #board .card .act.bad:hover:not(:disabled) {
-        color: var(--err);
-        border-color: var(--err);
-      }
-      #board .card .act:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-      }
-      @keyframes pgpulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.55;
-        }
-      }
-      #board .blog {
-        padding: 8px 14px;
-        border-top: 1px solid var(--line);
-        color: var(--faint);
-        font-size: 10.5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+<div id="replaybar">
+  <button id="rp-play">PLAY</button>
+  <span class="rp-epic" id="rp-epic"></span>
+  <input id="rp-scrub" type="range" min="0" max="1000" value="0" />
+  <span id="rp-time">0:00 / 0:00</span>
+  <a id="rp-exit" href="?">EXIT REPLAY</a>
+</div>
 
-      #toast {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 90;
-        display: none;
-        font-family: var(--pixel);
-        font-size: 8px;
-        letter-spacing: 0.1em;
-        color: var(--ink);
-        background: rgba(10, 14, 19, 0.95);
-        border: 1px solid var(--dev);
-        padding: 10px 14px;
-        box-shadow: 3px 3px 0 #000;
-      }
-      #toast.err {
-        border-color: var(--err);
-        color: #ffb3b3;
-      }
+<div id="stage">
+  <canvas id="scene"></canvas>
+  <div id="paused">⏸ PAUSED</div>
+  <div id="replaychip"><i></i>REPLAY</div>
+  <div id="tip"></div>
+  <div id="legend">
+    <span><i style="background:var(--ok)"></i>typing = working</span>
+    <span><i style="background:var(--warn)"></i>hand up = needs you</span>
+    <span><i style="background:var(--ok)"></i>cheering = done</span>
+    <span><i style="background:var(--err)"></i>slumped = failed</span>
+    <span><i style="background:var(--idle)"></i>wandering = idle</span>
+  </div>
+</div>
 
-      footer {
-        margin: 18px 26px 30px;
-        color: var(--faint);
-        font-family: var(--pixel);
-        font-size: 7px;
-        letter-spacing: 0.14em;
-      }
-      footer a {
-        color: var(--dim);
-      }
-      footer a:hover {
-        color: var(--dev);
-      }
+<section id="board">
+  <div class="bhead">
+    <h2>▦ Sprint Board</h2>
+    <span class="epic" id="board-epic"></span>
+    <span class="ph" id="board-phase"></span>
+  </div>
+  <div class="lanes" id="board-lanes"></div>
+  <div class="blog" id="board-log"></div>
+</section>
 
-      /* ====================== PRESENTATION MODE ====================== */
-      body.present header,
-      body.present #board,
-      body.present #banner,
-      body.present footer,
-      body.present #legend,
-      body.present #zonelabel {
-        display: none !important;
-      }
-      body.present {
-        overflow: hidden;
-      }
-      body.present #stage {
-        position: fixed;
-        inset: 0;
-        margin: 0;
-        border: none;
-        max-height: none;
-        aspect-ratio: auto;
-        z-index: 40;
-      }
-      body.present #hud {
-        position: fixed;
-        top: 12px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 60;
-        margin: 0;
-        max-width: 94vw;
-        background: rgba(10, 14, 19, 0.88);
-        backdrop-filter: blur(4px);
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-      }
-      body.present #hud .hbtn {
-        display: none;
-      }
-      body.present #present-hint {
-        display: inline;
-      }
-      body.present #replaybar {
-        position: fixed;
-        left: 50%;
-        bottom: 14px;
-        transform: translateX(-50%);
-        width: min(820px, 94vw);
-        margin: 0;
-        z-index: 60;
-        background: rgba(10, 14, 19, 0.88);
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div class="brand">
-        <h1>PIXEL <em>AGENT</em> OFFICE</h1>
-        <div class="sub">pm → dev → qa</div>
-      </div>
-      <div class="stats">
-        <div class="stat"><b id="s-active">0</b>ACTIVE</div>
-        <div class="stat" id="stat-blocked"><b id="s-blocked">0</b>BLOCKED</div>
-        <div class="stat"><b id="s-done">0</b>DONE</div>
-        <div class="stat"><b id="s-team">—</b>TEAM XP</div>
-      </div>
-      <div class="live" id="live"><i></i><span>LIVE</span></div>
-    </header>
+<section id="brain">
+  <div class="bhead">
+    <h2>◈ Project Brain</h2>
+    <div class="tabs" id="brain-tabs"></div>
+  </div>
+  <div class="bbody">
+    <div class="know" id="brain-know"></div>
+    <div class="hist" id="brain-hist"></div>
+  </div>
+</section>
 
-    <div id="banner"></div>
+<div id="scrim" onclick="closeDrawer()"></div>
+<aside id="drawer">
+  <div class="dhead"><h2 id="d-title">session</h2><button onclick="closeDrawer()">ESC</button></div>
+  <div class="dcmd" id="d-cmd"></div>
+  <pre id="d-logs"></pre>
+</aside>
 
-    <div id="hud">
-      <span class="hcell">COST <b class="money" id="h-cost">—</b></span>
-      <span class="hcell"
-        >TOK IN <b id="h-tin">—</b> OUT <b id="h-tout">—</b></span
-      >
-      <span class="hcell">DONE <b class="good" id="h-done">—</b></span>
-      <span class="hcell">FAIL <b class="bad" id="h-fail">—</b></span>
-      <span class="hcell">T/HR <b id="h-tph">—</b></span>
-      <span class="hcell">ELAPSED <b id="h-elapsed">—</b></span>
-      <span class="hcell" id="h-budget" style="display: none"
-        >BUDGET <span class="bbar"><i id="h-bbar"></i></span>
-        <b id="h-btxt"></b></span
-      >
-      <span class="hsp"></span>
-      <span id="present-hint">ESC TO EXIT</span>
-      <button class="hbtn" id="btn-pause" disabled>PAUSE</button>
-      <button class="hbtn danger" id="btn-cancel" disabled>
-        CANCEL SPRINT
-      </button>
-      <button class="hbtn" id="btn-theme" title="cycle crt / clean / night">
-        THEME: CLEAN
-      </button>
-      <button class="hbtn" id="btn-present" title="key P">PRESENT</button>
+<div id="toast"></div>
+
+<footer>
+  <span>hire into a zone:</span>
+  <code>claude --bg --name "plan: …" "task"</code>
+  <code>claude --bg --name "dev: …" "task"</code>
+  <code>claude --bg --name "test: …" "task"</code>
+  <span style="margin-left:auto">click a worker for their work log</span>
+</footer>
+
+<script>
+/* ===================================================================== *
+ *  Agent Office — animated 2D floor. Each session is a little human who  *
+ *  walks in, sits at a desk and types, takes coffee breaks, wanders when *
+ *  idle, rushes to the aisle and waves when blocked, cheers when done,   *
+ *  and slumps when it fails. Rendered on a canvas at 60fps; backend      *
+ *  state is polled every 5s and drives each character's behaviour.       *
+ * ===================================================================== */
+const DEMO = new URLSearchParams(location.search).get('demo')==='1';
+const ZONECOL = {planning:'#ffb454',developer:'#4fd6be',tester:'#c792ea',unassigned:'#7d8d99'};
+const HAIR = ['#2c2c34','#4a3120','#6b6b75','#1f3a4a','#5a2a3a','#3a4a20','#101216','#7a5230'];
+const SKIN = ['#e8b890','#c89070','#8a5a3b','#f0c8a0','#a06a45','#d8a878'];
+const LVL = xp => xp>=20?'STAFF':xp>=8?'SENIOR':xp>=3?'MID':'JUNIOR';
+
+let sessions=[], knowledge={}, curProject=null, orch=null;
+
+/* ---- small helpers ---- */
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function hash(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h}
+function age(ts){if(!ts)return'';const t=typeof ts==='number'?ts:Date.parse(ts);if(isNaN(t))return'';
+  const m=Math.max(0,Math.round((Date.now()-t)/60000));
+  if(m<1)return'now';if(m<60)return m+'m';const h=Math.floor(m/60);return h<24?h+'h':Math.floor(h/24)+'d'}
+function base(p){return String(p||'').replace(/[\\/]+$/,'').split(/[\\/]/).pop()||p}
+function rnd(a,b){return a+Math.random()*(b-a)}
+
+/* ===================================================================== *
+ *  WORLD  — a 1280x760 virtual floor, four zones around a central aisle  *
+ * ===================================================================== */
+const W=1280, H=760;
+const ZONES = {
+  planning:  {x:50,  y:64,  w:560, h:300, col:ZONECOL.planning,  label:'PM · WAR ROOM', team:'planning'},
+  developer: {x:670, y:64,  w:560, h:300, col:ZONECOL.developer, label:'DEVELOPERS',   team:'developer'},
+  tester:    {x:50,  y:402, w:560, h:300, col:ZONECOL.tester,    label:'QA · TESTING', team:'tester'},
+  unassigned:{x:670, y:402, w:560, h:300, col:ZONECOL.misc||ZONECOL.unassigned, label:'LOBBY', team:'unassigned'},
+};
+const COFFEE = {x: ZONES.unassigned.x+70, y: ZONES.unassigned.y+ZONES.unassigned.h-58};
+const DOOR   = {x: ZONES.unassigned.x+ZONES.unassigned.w-70, y: ZONES.unassigned.y+ZONES.unassigned.h-16};
+const PLANTS = [
+  {x:ZONES.planning.x+ZONES.planning.w-34,  y:ZONES.planning.y+50},
+  {x:ZONES.developer.x+30,                  y:ZONES.developer.y+ZONES.developer.h-34},
+  {x:ZONES.tester.x+ZONES.tester.w-34,      y:ZONES.tester.y+ZONES.tester.h-34},
+];
+
+/* build desk slots (sit position + the desk in front of the worker) */
+function makeDesks(z){
+  const desks=[]; const cols=3, rows=2;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const sx=z.x+78+c*168, sy=z.y+118+r*128;
+    desks.push({sx,sy,owner:null});
+  }
+  return desks;
+}
+for(const k in ZONES) ZONES[k].desks=makeDesks(ZONES[k]);
+
+function claimDesk(c){
+  const z=ZONES[c.team]||ZONES.unassigned;
+  if(c.desk && c.desk.owner===c.id) return c.desk;
+  const free=z.desks.find(d=>!d.owner);
+  if(free){ free.owner=c.id; c.desk=free; }
+  return c.desk;
+}
+function releaseDesk(c){ if(c.desk && c.desk.owner===c.id) c.desk.owner=null; c.desk=null; }
+
+/* ===================================================================== *
+ *  CHARACTERS                                                            *
+ * ===================================================================== */
+const chars = {};   // id -> character
+
+function makeChar(s){
+  const id=s.id||s.name; const h=hash(id);
+  const c={
+    id, session:s, status:s.status, team:s.team,
+    x:DOOR.x+rnd(-12,12), y:DOOR.y+rnd(-6,6),
+    face:-1, phase:Math.random()*6.28, speed:0.085+Math.random()*0.03, seed:h,
+    skin:SKIN[h%SKIN.length], hair:HAIR[(h>>3)%HAIR.length],
+    shirt:ZONECOL[s.team]||ZONECOL.unassigned,
+    goal:null, act:'', cool:0, desk:null, leaving:false,
+  };
+  return c;
+}
+function updateChar(c,s){
+  c.session=s;
+  if(c.team!==s.team){ releaseDesk(c); c.team=s.team; c.shirt=ZONECOL[s.team]||ZONECOL.unassigned; c.act=''; c.goal=null; c.cool=0; }
+  if(c.status!==s.status){ c.status=s.status; c.act=''; c.goal=null; c.cool=0;
+    if(s.status!=='working' && s.status!=='failed') releaseDesk(c); }
+}
+
+function syncChars(){
+  const live=new Set();
+  for(const s of sessions){
+    const id=s.id||s.name; if(!id) continue; live.add(id);
+    if(chars[id]) updateChar(chars[id],s); else chars[id]=makeChar(s);
+  }
+  for(const id in chars){
+    const c=chars[id];
+    if(!live.has(id) && !c.leaving){ c.leaving=true; releaseDesk(c); c.goal={x:DOOR.x,y:DOOR.y,act:'gone'}; }
+  }
+}
+
+/* walk the character toward a point, then strike a stationary pose */
+function walkTo(c,x,y,act){ c.goal={x,y,act}; }
+
+/* duration a pose holds before the character re-thinks (ms) */
+function actDur(a){
+  return {sit:rnd(2400,3600),coffee:rnd(1800,2600),wave:rnd(1200,1700),
+          cheer:rnd(1200,1700),slump:rnd(2600,3600),idle:rnd(1400,2400),
+          sleep:rnd(4000,8000)}[a] || 1600;
+}
+
+/* decide the next goal — purposeful only: walk to the right spot for the agent's
+   real status, then HOLD. No random wandering / coffee / dozing. */
+const HOLD = 6e5;   // once in place, stay until the status changes (which re-decides)
+function homeSpot(c){
+  const z=ZONES[c.team]||ZONES.unassigned;
+  // a stable per-agent spot inside its zone (deterministic — never roams)
+  const x=z.x+44+(c.seed % Math.max(1,(z.w-88)));
+  const y=z.y+72+((c.seed*7>>>0) % Math.max(1,(z.h-128)));
+  return {x,y};
+}
+function decide(c,t){
+  if(c.leaving) return;
+  const z=ZONES[c.team]||ZONES.unassigned;
+  const st=c.status;
+  if(st==='working'){
+    if(!c.desk) claimDesk(c);
+    const d=c.desk;
+    if(c.act!=='sit') walkTo(c, d?d.sx:z.x+z.w/2, d?d.sy:z.y+z.h-60, 'sit');
+    else c.cool=t+HOLD;                                   // sit and stay at the desk
+  } else if(st==='needs_input'){
+    if(c.act!=='wave') walkTo(c, z.x+z.w*0.5, z.y+z.h-30, 'wave'); else c.cool=t+HOLD;
+  } else if(st==='completed'){
+    if(c.act!=='cheer'){ const d=c.desk; walkTo(c, d?d.sx-16:z.x+z.w*0.5, d?d.sy:z.y+z.h-44, 'cheer'); } else c.cool=t+HOLD;
+  } else if(st==='failed'){
+    if(c.act!=='slump'){ if(!c.desk) claimDesk(c); const d=c.desk; walkTo(c, d?d.sx:z.x+z.w*0.5, d?d.sy:z.y+z.h-44, 'slump'); } else c.cool=t+HOLD;
+  } else { /* idle / stopped / unknown — stand at a fixed spot, no roaming */
+    if(c.act!=='idle'){ const s=homeSpot(c); walkTo(c, s.x, s.y, 'idle'); } else c.cool=t+HOLD;
+  }
+}
+
+function tickChar(c,t,dt){
+  if(c.goal){
+    const dx=c.goal.x-c.x, dy=c.goal.y-c.y, dist=Math.hypot(dx,dy);
+    if(dist<2.2){
+      const act=c.goal.act; c.x=c.goal.x; c.y=c.goal.y; c.goal=null; c.moving=false;
+      if(act==='gone'){ delete chars[c.id]; return; }
+      c.act=act;
+      if(act==='sit'||act==='slump') c.face=1;          // face the monitor
+      c.cool=t+actDur(act);
+    } else {
+      const step=c.speed*dt, f=Math.min(1,step/dist);
+      c.x+=dx*f; c.y+=dy*f; c.moving=true;
+      if(Math.abs(dx)>0.4) c.face = dx<0?-1:1;
+      c.phase += step*0.20;
+    }
+  } else {
+    c.moving=false;
+    if(t>c.cool) decide(c,t);
+  }
+}
+
+/* ===================================================================== *
+ *  RENDERING                                                             *
+ * ===================================================================== */
+const canvas=document.getElementById('scene'), ctx=canvas.getContext('2d');
+const dpr=Math.min(2, window.devicePixelRatio||1);
+const view={s:1,ox:0,oy:0,rw:0,rh:0};
+let xpAll={planning:0,developer:0,tester:0,unassigned:0};
+
+function fit(){
+  const r=canvas.getBoundingClientRect();
+  const nw=Math.max(1,Math.round(r.width*dpr)), nh=Math.max(1,Math.round(r.height*dpr));
+  if(canvas.width!==nw) canvas.width=nw;
+  if(canvas.height!==nh) canvas.height=nh;
+  view.s=Math.min(r.width/W, r.height/H);
+  view.ox=(r.width-W*view.s)/2; view.oy=(r.height-H*view.s)/2;
+  view.rw=r.width; view.rh=r.height;
+  ctx.setTransform(view.s*dpr,0,0,view.s*dpr, view.ox*dpr, view.oy*dpr);
+}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+function drawZone(z){
+  // floor
+  ctx.fillStyle='#0f141b'; rr(z.x,z.y,z.w,z.h,12); ctx.fill();
+  // subtle floor tiles
+  ctx.save(); rr(z.x,z.y,z.w,z.h,12); ctx.clip();
+  ctx.strokeStyle='rgba(255,255,255,.022)'; ctx.lineWidth=1;
+  for(let gx=z.x+46;gx<z.x+z.w;gx+=46){ctx.beginPath();ctx.moveTo(gx,z.y+34);ctx.lineTo(gx,z.y+z.h);ctx.stroke();}
+  for(let gy=z.y+34+46;gy<z.y+z.h;gy+=46){ctx.beginPath();ctx.moveTo(z.x,gy);ctx.lineTo(z.x+z.w,gy);ctx.stroke();}
+  // header wall band
+  ctx.fillStyle='#0b1016'; ctx.fillRect(z.x,z.y,z.w,34);
+  ctx.restore();
+  // border + accent
+  ctx.strokeStyle=z.col+'4d'; ctx.lineWidth=1.5; rr(z.x,z.y,z.w,z.h,12); ctx.stroke();
+  ctx.fillStyle=z.col; rr(z.x+12,z.y+13,9,9,2); // diamond-ish tag
+  // label
+  ctx.fillStyle=z.col; ctx.font='600 13px Chakra Petch, sans-serif'; ctx.textBaseline='middle';
+  ctx.fillText(z.label, z.x+30, z.y+18);
+  // level badge (right)
+  const xp=xpAll[z.team]||0;
+  const badge=`${LVL(xp)} · ${xp} XP`;
+  ctx.font='400 10px IBM Plex Mono, monospace';
+  const bw=ctx.measureText(badge).width+16;
+  ctx.strokeStyle=z.col+'55'; ctx.fillStyle='#0b1016';
+  rr(z.x+z.w-bw-12, z.y+8, bw, 18, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=z.col; ctx.fillText(badge, z.x+z.w-bw-4, z.y+18);
+}
+
+function drawDesk(d){
+  const working = d.owner && chars[d.owner] && chars[d.owner].status==='working';
+  const failed  = d.owner && chars[d.owner] && chars[d.owner].status==='failed';
+  const sx=d.sx, sy=d.sy;
+  // desktop surface (in front of where the worker sits)
+  ctx.fillStyle='#222d36'; rr(sx+8, sy-26, 40, 6, 2); ctx.fill();
+  ctx.fillStyle='#1a232b'; ctx.fillRect(sx+10, sy-20, 4, 16); ctx.fillRect(sx+42, sy-20, 4, 16);
+  // monitor
+  const glow = working?'#4fd6be':failed?'#ff6b6b':'#33414c';
+  ctx.fillStyle='#0a0f14'; ctx.strokeStyle=glow; ctx.lineWidth=2;
+  rr(sx+34, sy-50, 22, 16, 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = working?'rgba(79,214,190,.22)':failed?'rgba(255,107,107,.2)':'#0d141b';
+  ctx.fillRect(sx+36, sy-48, 18, 12);
+  if(working){
+    ctx.fillStyle=glow; const n=2+((performance.now()/180|0)%3);
+    for(let i=0;i<n;i++) ctx.fillRect(sx+38, sy-45+i*3, 6+((i*5)%10), 1.4);
+    ctx.shadowColor=glow; ctx.shadowBlur=12; ctx.strokeRect(sx+34,sy-50,22,16); ctx.shadowBlur=0;
+  }
+  ctx.fillStyle='#222d36'; ctx.fillRect(sx+44, sy-34, 2, 6);
+}
+
+/* draw one humanoid. assumes ctx already translated to feet & depth-scaled. */
+function drawHuman(c,t){
+  const moving=c.moving, act=c.act;
+  const skin=c.skin, hair=c.hair, shirt=c.shirt, pants='#2b3640';
+  let hop=0, sit=false, lean=0, headTilt=0;
+  let lLeg=0,rLeg=0,lArm=0.12,rArm=-0.12;
+
+  if(moving){
+    const p=c.phase; const sw=Math.sin(p);
+    lLeg=sw*0.55; rLeg=-sw*0.55; lArm=-sw*0.5; rArm=sw*0.5; hop=Math.abs(sw)*1.1;
+  } else if(act==='sit'){
+    sit=true; lean=0.12; const k=Math.sin(t/110);
+    lArm=1.45+k*0.18; rArm=1.45+Math.sin(t/110+1)*0.18;          // typing
+  } else if(act==='coffee'){
+    sit=false; rArm=1.5; lArm=0.1; lean=0.05;                     // holding mug
+  } else if(act==='wave'){
+    const k=Math.sin(t/150); rArm=-2.5+k*0.28; lArm=0.14; headTilt=-0.05;
+  } else if(act==='cheer'){
+    lArm=-2.6; rArm=2.6; hop=Math.abs(Math.sin(t/170))*4;
+  } else if(act==='slump'){
+    sit=true; lean=0.55; headTilt=0.35; lArm=0.25; rArm=-0.1;
+  } else if(act==='sleep'){
+    lean=0.04; lArm=0.45; rArm=-0.45; hop=Math.sin(t/600)*0.5; headTilt=0.18;
+  } else { /* idle stand */
+    hop=Math.sin(t/520+c.phase)*0.6;
+  }
+
+  ctx.translate(0,-hop);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // legs
+  ctx.strokeStyle=pants;
+  if(sit){
+    ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(11,-15); ctx.lineTo(13,-1); ctx.stroke();   // right thigh+shin
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(9,-15);  ctx.lineTo(9,-1);  ctx.stroke();   // left
+  } else {
+    ctx.lineWidth=5;
+    const leg=(a)=>{ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(Math.sin(a)*15, -15+Math.cos(a)*15);ctx.stroke();};
+    leg(lLeg); leg(rLeg);
+  }
+
+  // upper body (torso + arms + head), rotated by lean about the hip
+  ctx.save();
+  ctx.translate(0,-15); ctx.rotate(lean);
+  // torso
+  ctx.strokeStyle=shirt; ctx.lineWidth=11;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-17); ctx.stroke();
+  // arms from shoulder (0,-15)
+  ctx.lineWidth=4.2; ctx.strokeStyle=shirt;
+  const arm=(a)=>{const hx=Math.sin(a)*14, hy=-15+Math.cos(a)*14;
+    ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.fillStyle=skin;ctx.beginPath();ctx.arc(hx,hy,2.3,0,7);ctx.fill();
+    if(act==='coffee'&&a===rArm){ctx.fillStyle='#cdd6dc';ctx.fillRect(hx-2,hy-3,4,4);} };
+  arm(lArm); arm(rArm);
+  // head
+  ctx.save(); ctx.translate(0,-22); ctx.rotate(headTilt);
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(0,0,6.4,0,7); ctx.fill();
+  // hair cap
+  ctx.fillStyle=hair; ctx.beginPath(); ctx.arc(0,-1.2,6.4,Math.PI*1.04,Math.PI*2.04); ctx.fill();
+  ctx.fillRect(-6.4,-2,3.4,3);
+  // face (eye facing +x after mirror)
+  ctx.fillStyle='#15181c'; ctx.beginPath(); ctx.arc(3.4,0.4,1.05,0,7); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawFX(c,t){
+  let txt='',col='',y=-58,size=15;
+  if(c.status==='needs_input'){ txt='?'; col='#ffd166'; y=-60-Math.abs(Math.sin(t/180))*5; size=18; }
+  else if(c.status==='completed'){ txt='✓'; col='#62d196'; size=16; }
+  else if(c.status==='failed'){ txt='!'; col='#ff6b6b'; size=16; }
+  else if(c.act==='sleep'){ txt='z'; col='#5b6b76'; size=12; y=-56-((t/400)%10); }
+  if(!txt) return;
+  ctx.font=`700 ${size}px Chakra Petch, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor=col; ctx.shadowBlur=10; ctx.fillStyle=col; ctx.fillText(txt,0,y); ctx.shadowBlur=0;
+  ctx.textAlign='left';
+}
+
+function drawChar(c,t){
+  const sc=0.92+(c.y/H)*0.26;
+  ctx.save();
+  ctx.translate(c.x,c.y);
+  // soft shadow
+  ctx.fillStyle='rgba(0,0,0,.34)'; ctx.beginPath(); ctx.ellipse(0,2,12*sc,4*sc,0,0,7); ctx.fill();
+  ctx.scale(sc,sc);
+  // glow ring for attention states
+  if(c.status==='needs_input'){ ctx.save(); ctx.globalAlpha=.5+.3*Math.sin(t/250);
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.ellipse(0,-2,15,6,0,0,7); ctx.stroke(); ctx.restore(); }
+  // body (mirror by facing)
+  ctx.save(); ctx.scale(c.face,1); drawHuman(c,t); ctx.restore();
+  // fx + nameplate (not mirrored)
+  drawFX(c,t);
+  const nm=c.session?.name||c.id;
+  ctx.font='500 9.5px IBM Plex Mono, monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle = c.status==='working'?'#cdd6dc':'#71828e';
+  let label=nm.length>20?nm.slice(0,19)+'…':nm;
+  ctx.fillText(label,0,10); ctx.textAlign='left';
+  // activity / completion bar under the nameplate
+  const bw=32, bx=-bw/2, by=22, bh=3.2, st=c.status;
+  ctx.fillStyle='#1a232b'; rr(bx,by,bw,bh,1.6); ctx.fill();          // track
+  if(st==='working'){            // indeterminate moving segment = "in progress"
+    const seg=bw*0.4, range=bw-seg, p=(Math.sin(t/620+c.phase)*0.5+0.5)*range;
+    ctx.fillStyle=c.shirt; rr(bx+p,by,seg,bh,1.6); ctx.fill();
+  } else if(st==='completed'){ ctx.fillStyle='#62d196'; rr(bx,by,bw,bh,1.6); ctx.fill(); }
+  else if(st==='failed'){ ctx.fillStyle='#ff6b6b'; rr(bx,by,bw,bh,1.6); ctx.fill(); }
+  else if(st==='needs_input'){ ctx.fillStyle='#ffd166'; rr(bx,by,bw*(0.55+0.25*Math.sin(t/300)),bh,1.6); ctx.fill(); }
+  ctx.restore();
+}
+
+function drawProps(t){
+  // coffee machine
+  const cm=COFFEE;
+  ctx.fillStyle='#1b2630'; rr(cm.x-12,cm.y-30,24,34,3); ctx.fill();
+  ctx.strokeStyle='#2c3a45'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='#0c1117'; ctx.fillRect(cm.x-7,cm.y-24,14,9);
+  ctx.fillStyle='#4fd6be'; ctx.beginPath(); ctx.arc(cm.x+6,cm.y-6,1.6,0,7); ctx.fill();
+  ctx.fillStyle='#71828e'; ctx.font='400 8px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('☕',cm.x,cm.y+10); ctx.textAlign='left';
+  // door (entrance in lobby wall)
+  const d=DOOR;
+  ctx.fillStyle='#0a0e13'; ctx.fillRect(d.x-16,d.y-4,32,8);
+  ctx.fillStyle='#1c2832'; rr(d.x-15,d.y-40,30,40,3); ctx.fill();
+  ctx.strokeStyle='#33414c'; ctx.lineWidth=1.4; rr(d.x-15,d.y-40,30,40,3); ctx.stroke();
+  ctx.fillStyle='#0d141b'; ctx.fillRect(d.x-10,d.y-36,20,34);
+  ctx.fillStyle='#4fd6be'; ctx.beginPath(); ctx.arc(d.x+6,d.y-18,1.5,0,7); ctx.fill();
+  ctx.fillStyle='#46555f'; ctx.font='400 8px IBM Plex Mono'; ctx.textAlign='center';
+  ctx.fillText('ENTRANCE',d.x,d.y+12); ctx.textAlign='left';
+  // plants
+  for(const p of PLANTS){
+    ctx.fillStyle='#1a2129'; rr(p.x-5,p.y-2,10,8,2); ctx.fill();
+    ctx.fillStyle='#3a5a40'; ctx.beginPath(); ctx.arc(p.x,p.y-8,7,0,7); ctx.fill();
+    ctx.fillStyle='#4a6f50'; ctx.beginPath(); ctx.arc(p.x-3,p.y-11,4,0,7); ctx.arc(p.x+3,p.y-10,4,0,7); ctx.fill();
+  }
+}
+
+let lastT=performance.now();
+function frame(t){
+  const dt=Math.min(50, t-lastT); lastT=t;
+  fit();
+  // recompute aggregate XP for zone badges
+  xpAll={planning:0,developer:0,tester:0,unassigned:0};
+  for(const k of Object.values(knowledge)) for(const team in xpAll) xpAll[team]+=(k.teamXP?.[team]||0);
+
+  ctx.clearRect(-view.ox/view.s, -view.oy/view.s, view.rw/view.s, view.rh/view.s);
+  for(const k in ZONES) drawZone(ZONES[k]);
+  for(const k in ZONES) for(const d of ZONES[k].desks) drawDesk(d);
+  drawProps(t);
+
+  // advance + draw characters, back-to-front by y
+  const list=Object.values(chars);
+  for(const c of list) tickChar(c,t,dt);
+  list.sort((a,b)=>a.y-b.y);
+  for(const c of list) drawChar(c,t);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- pointer: hover tooltip + click to open the work-log drawer ---- */
+function worldFromEvent(e){
+  const r=canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left-view.ox)/view.s, y:(e.clientY-r.top-view.oy)/view.s };
+}
+function pick(wx,wy){
+  let hit=null;
+  for(const c of Object.values(chars)){
+    const sc=0.92+(c.y/H)*0.26;
+    if(wx>c.x-13*sc && wx<c.x+13*sc && wy>c.y-58*sc && wy<c.y+6){
+      if(!hit || c.y>hit.y) hit=c;
+    }
+  }
+  return hit;
+}
+const tip=document.getElementById('tip');
+canvas.addEventListener('mousemove',e=>{
+  const {x,y}=worldFromEvent(e); const c=pick(x,y);
+  if(c){ canvas.style.cursor='pointer';
+    const s=c.session||{};
+    tip.style.display='block';
+    tip.innerHTML=`<b>${esc(s.name||c.id)}</b><span class="s">${esc(s.summary||c.status)}</span>`;
+    const r=canvas.getBoundingClientRect();
+    let lx=e.clientX-r.left+14, ly=e.clientY-r.top+14;
+    if(lx+tip.offsetWidth>r.width) lx=e.clientX-r.left-tip.offsetWidth-14;
+    tip.style.left=lx+'px'; tip.style.top=ly+'px';
+  } else { canvas.style.cursor='default'; tip.style.display='none'; }
+});
+canvas.addEventListener('mouseleave',()=>{tip.style.display='none';});
+canvas.addEventListener('click',e=>{
+  const {x,y}=worldFromEvent(e); const c=pick(x,y);
+  if(c && c.session && c.session.id) openDrawer(c.session.id);
+  else if(c && c.id) openDrawer(c.id);
+});
+
+/* ===================================================================== *
+ *  HUD + PROJECT BRAIN  (unchanged behaviour from the original)          *
+ * ===================================================================== */
+/* ---- sprint board (orchestration coordination) ---- */
+const LANES=[
+  {key:'planned', label:'Backlog',  match:t=>t.state==='planned'},
+  {key:'dev',     label:'In Dev',   match:t=>t.state==='dev'},
+  {key:'qa',      label:'In QA',    match:t=>t.state==='qa'},
+  {key:'done',    label:'Shipped',  match:t=>t.state==='done'},
+  {key:'failed',  label:'Failed',   match:t=>t.state==='failed'||t.state==='cancelled'},
+];
+function renderBoard(){
+  const el=document.getElementById('board');
+  if(!orch || !Array.isArray(orch.board) || !orch.board.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  document.getElementById('board-epic').textContent=orch.epic||'';
+  const ph=document.getElementById('board-phase');
+  ph.textContent=(orch.phase||'').toUpperCase()||(orch.active?'BUILDING':'IDLE');
+  ph.className='ph '+(orch.phase==='done'?'done':orch.active?'run':'');
+  document.getElementById('board-lanes').innerHTML=LANES.map(L=>{
+    const cards=orch.board.filter(L.match);
+    const STG={planned:'Queued',dev:'Developing',qa:'Verifying',done:'Shipped',failed:'Failed',cancelled:'Cancelled'};
+    const inner=cards.map(t=>`
+      <div class="card ${esc(t.state)}">
+        <span class="id">${esc(t.id)}${(t.deps&&t.deps.length)?' · needs '+esc(t.deps.join(',')):''}</span>
+        <span class="ti">${esc(t.title)}</span>
+        ${t.retries?`<div class="rw">↻ ${t.retries} rework${t.retries>1?'s':''}</div>`:''}
+        <div class="stg">${STG[t.state]||esc(t.state)}</div>
+        <div class="pg"><i></i></div>
+      </div>`).join('');
+    return `<div class="lane"><h3>${L.label}<b>${cards.length}</b></h3>${inner||''}</div>`;
+  }).join('');
+  document.getElementById('board-log').textContent=(orch.log||[]).slice(-1)[0]||'';
+}
+
+function updateHUD(){
+  const counts={working:0,needs_input:0,completed:0,failed:0};
+  for(const s of sessions) if(counts[s.status]!==undefined) counts[s.status]++;
+  document.getElementById('st-total').textContent=sessions.length;
+  document.getElementById('st-active').textContent=counts.working;
+  document.getElementById('st-input').textContent=counts.needs_input;
+  document.getElementById('st-done').textContent=counts.completed;
+  document.getElementById('st-input-wrap').classList.toggle('alert',counts.needs_input>0);
+  document.title=(counts.needs_input?`(${counts.needs_input} ✋) `:'')+'Agent Office';
+}
+
+function renderBrain(){
+  const dirs=Object.keys(knowledge);
+  const tabs=document.getElementById('brain-tabs');
+  if(!dirs.length){
+    tabs.innerHTML='';
+    document.getElementById('brain-know').innerHTML='<div class="meta">no projects observed yet — dispatch an agent and the office starts learning its folder.</div>';
+    document.getElementById('brain-hist').innerHTML='';
+    return;
+  }
+  if(!curProject||!knowledge[curProject]) curProject=dirs[0];
+  tabs.innerHTML=dirs.map(d=>`<button class="${d===curProject?'on':''}" onclick="pickProject('${esc(d)}')">${esc(base(d))}</button>`).join('');
+
+  const k=knowledge[curProject];
+  const know=document.getElementById('brain-know');
+  know.innerHTML=`
+    <div class="meta">
+      <span>${esc(curProject)}</span>
+      <span>· ${k.stats?.completed||0} done / ${k.stats?.failed||0} failed</span>
+      <span>· ${k.learnedAt?'learned '+age(k.learnedAt)+' ago':'not yet studied'}</span>
+      <button class="learnbtn" ${k.learning?'disabled':''} onclick="learn('${esc(curProject)}')">${k.learning?'STUDYING…':'⟳ LEARN THIS FOLDER'}</button>
     </div>
+    <pre>${esc(k.summary || (k.learning?'reading the codebase with `claude -p`…':'press LEARN — the office sends a headless `claude -p` into this folder and stores what it finds.'))}</pre>
+    <div class="xpbar">
+      ${['planning','developer','tester'].map(team=>`<span class="xpteam"><i style="width:7px;height:7px;border-radius:2px;background:${ZONECOL[team]};display:inline-block"></i>${team}: <b>${LVL(k.teamXP?.[team]||0)}</b> (${k.teamXP?.[team]||0}xp)</span>`).join('')}
+    </div>`;
+  const hist=document.getElementById('brain-hist');
+  const rows=(k.tasks||[]).slice(0,8).map(task=>`
+    <li><i style="background:${task.outcome==='completed'?'var(--ok)':'var(--err)'}"></i>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(task.name)}</span>
+      <span class="t">${age(task.at)} ago</span></li>`).join('');
+  hist.innerHTML=`<h3>Recent outcomes</h3><ul>${rows||'<li style="border:none;color:var(--faint)">nothing finished here yet</li>'}</ul>`;
+}
+function pickProject(d){curProject=d;renderBrain();}
+async function learn(cwd){
+  if(DEMO){knowledge[cwd].learning=true;renderBrain();
+    setTimeout(()=>{knowledge[cwd].learning=false;knowledge[cwd].summary='• (demo) a real run shells `claude -p` inside '+cwd+' and stores the brief here';knowledge[cwd].learnedAt=Date.now();renderBrain();},1500);return;}
+  knowledge[cwd]={...knowledge[cwd],learning:true};renderBrain();
+  await fetch('/api/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cwd})});
+}
 
-    <div id="stage">
-      <canvas id="scene" width="640" height="384"></canvas>
-      <div id="paused">⏸ PAUSED</div>
-      <div id="replaychip"><i></i>REPLAY</div>
-      <div id="empty">
-        <b>NO AGENTS ON FLOOR</b>
-        Start a sprint to populate the office:<br />
-        <code
-          >ORCH_SKIP_PERMISSIONS=1 node orchestrate.js --project
-          /path/to/project --epic ./examples/sample-epic.md</code
-        ><br />
-        Or open <a href="?demo=1" style="color: var(--dev)">?demo=1</a> for a
-        sample office.
-      </div>
-      <div id="tip"></div>
-      <div id="legend">
-        <span><i style="background: #ffb454"></i> PM / PLAN</span>
-        <span><i style="background: #4fd6be"></i> DEVELOPER</span>
-        <span><i style="background: #c792ea"></i> QA / TEST</span>
-        <span><i style="background: #62d196"></i> DONE</span>
-        <span><i style="background: #ffd166"></i> BLOCKED</span>
-        <span><i style="background: #ff6b6b"></i> FAILED</span>
-      </div>
-      <div id="zonelabel"><b>HOVER</b> an agent for details</div>
-    </div>
+/* ===================================================================== *
+ *  POLL + DRAWER                                                         *
+ * ===================================================================== */
+/* feed one /api/state payload into the office. Declared as a global function so
+   office-extras.js can drive it directly during replay (?replay=<runId>). */
+function ingest(data){
+  data=data||{};
+  const live=document.getElementById('live'),banner=document.getElementById('banner');
+  sessions=data.sessions||[]; knowledge=data.knowledge||{}; orch=data.orch||null;
+  if(data.error){banner.style.display='block';
+    banner.innerHTML='⚠ '+esc(data.error)+'<br>Check <code>claude</code> is on PATH and run <code>claude update</code>. Or preview the <a href="/?demo=1">demo office</a>.';
+  } else banner.style.display='none';
+  live.classList.remove('err');
+  document.getElementById('live-label').textContent=DEMO?'DEMO OFFICE':(window.__replayMode?'REPLAY':'LIVE · 5s');
+  syncChars(); updateHUD(); renderBoard(); renderBrain();
+  if(window.OfficeExtras) window.OfficeExtras.onState(data);   // live cost/budget HUD + control buttons
+}
+async function poll(){
+  if(window.__replayMode) return;            // office-extras drives ingest() during replay
+  const live=document.getElementById('live');
+  try{
+    const r=await fetch('/api/state'+(DEMO?'?demo=1':''));
+    ingest(await r.json());
+  }catch(e){
+    live.classList.add('err');
+    document.getElementById('live-label').textContent='SERVER OFFLINE';
+  }
+}
 
-    <div id="replaybar">
-      <span class="badge">REPLAY</span>
-      <button class="hbtn" id="rp-play">PAUSE</button>
-      <input type="range" id="rp-scrub" min="0" max="1000" value="0" />
-      <span id="rp-time">0:00 / 0:00</span>
-      <span class="epic" id="rp-epic"></span>
-      <a class="hbtn" id="rp-exit" href="?" style="text-decoration: none"
-        >EXIT</a
-      >
-    </div>
+async function openDrawer(id){
+  const s=sessions.find(x=>x.id===id) || (chars[id]&&chars[id].session);
+  document.getElementById('d-title').textContent=s?s.name:id;
+  document.getElementById('d-cmd').innerHTML=id?`attach: <code>claude attach ${esc(id)}</code> · stop: <code>claude stop ${esc(id)}</code>`:'';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+  const pre=document.getElementById('d-logs');pre.textContent='loading work log…';
+  if(DEMO){pre.textContent='[demo] real sessions stream `claude logs '+id+'` output here';return;}
+  try{const r=await fetch('/api/logs/'+encodeURIComponent(id));const d=await r.json();
+    pre.textContent=d.logs||d.error||'(no output yet)';pre.scrollTop=pre.scrollHeight;
+  }catch(e){pre.textContent='failed: '+e.message}
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
 
-    <div id="board">
-      <div class="bhead">
-        <h2>SPRINT BOARD</h2>
-        <div class="epic" id="bd-epic">—</div>
-        <div class="ph" id="bd-phase">IDLE</div>
-      </div>
-      <div class="lanes">
-        <div class="lane">
-          <h3>PLANNED <b id="bd-c-planned">0</b></h3>
-          <div id="lane-planned"></div>
-        </div>
-        <div class="lane">
-          <h3>DEV <b id="bd-c-dev">0</b></h3>
-          <div id="lane-dev"></div>
-        </div>
-        <div class="lane">
-          <h3>QA <b id="bd-c-qa">0</b></h3>
-          <div id="lane-qa"></div>
-        </div>
-        <div class="lane">
-          <h3>DONE <b id="bd-c-done">0</b></h3>
-          <div id="lane-done"></div>
-        </div>
-        <div class="lane">
-          <h3>FAILED <b id="bd-c-failed">0</b></h3>
-          <div id="lane-failed"></div>
-        </div>
-      </div>
-      <div class="blog" id="bd-log">—</div>
-    </div>
-
-    <div id="toast"></div>
-
-    <footer>
-      pixel office · same /api/state feed as <a href="/">/</a> · refresh ~2s ·
-      canvas 640×384, integer-scaled · key P = presentation
-    </footer>
-
-    <script>
-      "use strict";
-      // ============================================================================
-      // PIXEL OFFICE
-      // 40×24 tile grid (16px logical → integer-scaled to container).
-      // All art is procedural (fillRect) — no sprite sheets, no deps.
-      // Feature subsystems (HUD / controls / themes / present / replay) live in
-      // office-extras.js — loaded after this script, shares top-level bindings.
-      // ============================================================================
-
-      // replay flag must exist BEFORE the first poll fires (extras boots later)
-      window.__replayMode = new URL(window.location.href).searchParams.has(
-        "replay"
-      );
-      window.__demoMode = false;
-
-      const TILE = 16,
-        COLS = 40,
-        ROWS = 24,
-        W = TILE * COLS,
-        H = TILE * ROWS;
-      const cvs = document.getElementById("scene");
-      const ctx = cvs.getContext("2d");
-      ctx.imageSmoothingEnabled = false;
-      // ctxCur lets environment painters target the offscreen background canvas
-      let ctxCur = ctx;
-
-      const P = {
-        // floor
-        fA: "#13202b",
-        fB: "#172734",
-        grout: "#0c151c",
-        // walls (3/4 perspective)
-        wallTop: "#3a4a5a",
-        wallSide: "#26323f",
-        wallShade: "#1a232e",
-        // desks
-        deskTop: "#5a4636",
-        deskSide: "#3b2e23",
-        deskShade: "#2a1f17",
-        monitorBack: "#1b1b1f",
-        monitorOn: "#0e2a25",
-        monitorOff: "#0e1c2a",
-        // accents
-        plant: "#3aaa55",
-        plantDark: "#1f7c3e",
-        plantPot: "#7a4a2c",
-        rug: "#1d2530",
-        // ui
-        ok: "#62d196",
-        warn: "#ffd166",
-        err: "#ff6b6b",
-        idle: "#5b6b76",
-        ink: "#d9e3e9",
-        dim: "#71828e",
-        faint: "#3d4a55",
-        // skin
-        skin: "#f4c897",
-        skinShade: "#d5a373",
-        // teams (shirt colors)
-        plan: "#ffb454",
-        dev: "#4fd6be",
-        test: "#c792ea",
-        misc: "#7d8d99"
-      };
-
-      // ---- rooms (tile coordinates) ----------------------------------------------
-      // PLANNING top-left · DEV PODS center · QA LAB right · BREAK AREA bottom.
-      // Each room gets its own floor tint (fA/fB checker pair) for tile variation.
-      const ZONES = {
-        planning: {
-          x: 1,
-          y: 1,
-          w: 10,
-          h: 16,
-          label: "PLANNING",
-          color: P.plan,
-          fA: "#1b2230",
-          fB: "#1f2737"
-        },
-        developer: {
-          x: 12,
-          y: 1,
-          w: 15,
-          h: 16,
-          label: "DEV PODS",
-          color: P.dev,
-          fA: "#13202b",
-          fB: "#172734"
-        },
-        tester: {
-          x: 28,
-          y: 1,
-          w: 11,
-          h: 16,
-          label: "QA LAB",
-          color: P.test,
-          fA: "#1d1a2b",
-          fB: "#221f33"
-        },
-        unassigned: {
-          x: 1,
-          y: 18,
-          w: 38,
-          h: 5,
-          label: "BREAK AREA",
-          color: P.misc,
-          fA: "#221c15",
-          fB: "#272019"
-        }
-      };
-      // orch worker.room → zone key (fallback handled by teamOf)
-      const ROOM_ZONE = { planning: "planning", dev: "developer", qa: "tester" };
-
-      // desks (tile coords) — top-down rectangle where the agent sits behind a monitor
-      const DESKS = {
-        planning: [
-          [3, 3],
-          [7, 3],
-          [3, 7],
-          [7, 7],
-          [3, 11],
-          [7, 11],
-          [3, 14],
-          [7, 14]
-        ],
-        developer: [
-          [13, 3],
-          [17, 3],
-          [21, 3],
-          [13, 7],
-          [17, 7],
-          [21, 7],
-          [13, 11],
-          [17, 11],
-          [21, 11],
-          [13, 14],
-          [17, 14],
-          [21, 14]
-        ],
-        tester: [
-          [29, 3],
-          [33, 3],
-          [29, 7],
-          [33, 7],
-          [29, 11],
-          [33, 11],
-          [29, 14],
-          [33, 14]
-        ],
-        unassigned: []
-      };
-      // per-zone door mats (where a room opens onto the corridor / break area)
-      const DOORS = {
-        planning: { x: 5, y: 17 },
-        developer: { x: 19, y: 17 },
-        tester: { x: 33, y: 17 },
-        unassigned: { x: 19, y: 18 }
-      };
-      // office entry door (centre-bottom of building)
-      const ENTRY = { tx: 19, ty: 22 };
-      // break-area couches — where agents go on break (spread across the bottom)
-      const COUCHES = [
-        { tx: 3, ty: 19 },
-        { tx: 6, ty: 19 },
-        { tx: 9, ty: 19 },
-        { tx: 28, ty: 19 },
-        { tx: 31, ty: 19 },
-        { tx: 34, ty: 19 }
-      ];
-      // coffee machine + clock + whiteboard positions (decor)
-      const DECOR = {
-        coffeeMachine: { x: 24 * TILE + 2, y: 19 * TILE + 2 },
-        clock: { x: 19 * TILE + 4, y: 1 * TILE + 9 }, // wall clock above dev pods
-        whiteboard: { x: 4 * TILE, y: 1 * TILE + 9 } // planning room whiteboard
-      };
-
-      // ---- sprite frames ----------------------------------------------------------
-      // 8 cols × 12 rows. Char legend:
-      //   H = hair, S = skin, T = shirt, P = pants, F = shoe, A = arm (front), E = eye,
-      //   e = closed eye (blink), .=transparent
-      const SPRITES = {
-        idle: [
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SEEEES.",
-          "..SSSS..",
-          ".ATTTTA.",
-          "ATTTTTTA",
-          "ATTTTTTA",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F.."
-        ],
-        // typing frame A — head normal, arms reach forward over keyboard
-        type: [
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SEEEES.",
-          "..SSSS..",
-          ".ATTTTA.",
-          "ATTTTTTA",
-          "ATTTTTTA",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F.."
-        ],
-        // typing frame B — arms tucked, head tilts left a pixel for an obvious bob
-        type2: [
-          "..HHH...",
-          ".HHHHH..",
-          ".HSSSH..",
-          ".SEEES..",
-          "..SSS...",
-          "..TTTT..",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F.."
-        ],
-        raised: [
-          "A.HHHH.A",
-          "AHHHHHHA",
-          "AHSSSSHA",
-          ".SEEEES.",
-          "..SSSS..",
-          "..TTTT..",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F.."
-        ],
-        slump: [
-          "........",
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SeeeeS.",
-          "..SSSS..",
-          "ATTTTTTA",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F.."
-        ],
-        walk: [
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SEEEES.",
-          "..SSSS..",
-          "A.TTTT..",
-          ".TTTTTT.",
-          ".TTTTTTA",
-          ".TTTTTT.",
-          "..PP.P..",
-          "..P..P..",
-          "..F..F.."
-        ],
-        walk2: [
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SEEEES.",
-          "..SSSS..",
-          "..TTTT.A",
-          ".TTTTTT.",
-          "ATTTTTT.",
-          ".TTTTTT.",
-          "..P.PP..",
-          "..P..P..",
-          "..F..F.."
-        ],
-        sit: [
-          "........",
-          "..HHHH..",
-          ".HHHHHH.",
-          ".HSSSSH.",
-          ".SEEEES.",
-          "..SSSS..",
-          ".ATTTTA.",
-          "ATTTTTTA",
-          ".TTTTTT.",
-          ".PPPPPP.",
-          "PPPPPPPP",
-          "F......F"
-        ],
-        jump: [
-          "A.HHHH.A",
-          "AHHHHHHA",
-          "AHSSSSHA",
-          ".SEEEES.",
-          "..SSSS..",
-          "..TTTT..",
-          ".TTTTTT.",
-          ".TTTTTT.",
-          "..PPPP..",
-          "..PPPP..",
-          "..F..F..",
-          "........"
-        ]
-      };
-      // blink overlay — substitute eye row (row 3) to look closed
-      const BLINK_ROW = ".SeeeeS.";
-
-      // ---- agent palette by team --------------------------------------------------
-      function paletteFor(team) {
-        const shirt =
-          { planning: P.plan, developer: P.dev, tester: P.test }[team] ||
-          P.misc;
-        return {
-          H: hairFor,
-          S: P.skin,
-          E: "#1d1d2a",
-          e: "#1d1d2a",
-          T: shirt,
-          A: shirt,
-          P: "#2f3a47",
-          F: "#1c1f25"
-        };
-      }
-      function hairFor(seed) {
-        const colors = [
-          "#3b2a1d",
-          "#5a3a1f",
-          "#8a5a2b",
-          "#2a2a2a",
-          "#503040",
-          "#404a55",
-          "#8b6b3a",
-          "#6a4326"
-        ];
-        return colors[hash(seed) % colors.length];
-      }
-      function hash(s) {
-        let h = 0;
-        for (const c of String(s || "")) h = (h * 31 + c.charCodeAt(0)) | 0;
-        return Math.abs(h);
-      }
-
-      // ---- low-level draw helpers -------------------------------------------------
-      function px(x, y, c) {
-        ctxCur.fillStyle = c;
-        ctxCur.fillRect(x | 0, y | 0, 1, 1);
-      }
-      function rect(x, y, w, h, c) {
-        ctxCur.fillStyle = c;
-        ctxCur.fillRect(x | 0, y | 0, w, h);
-      }
-      const SPRITE_SCALE = 2;
-      function drawSprite(frame, x, y, pal, opts) {
-        const arr = SPRITES[frame] || SPRITES.idle;
-        const blinkRow = opts && opts.blink ? 3 : -1;
-        for (let r = 0; r < arr.length; r++) {
-          const row = r === blinkRow ? BLINK_ROW : arr[r];
-          for (let cI = 0; cI < row.length; cI++) {
-            const ch = row[cI];
-            if (ch === ".") continue;
-            let color = pal[ch];
-            if (typeof color === "function") color = color(pal.seed);
-            if (!color) continue;
-            rect(
-              x + cI * SPRITE_SCALE,
-              y + r * SPRITE_SCALE,
-              SPRITE_SCALE,
-              SPRITE_SCALE,
-              color
-            );
-          }
-        }
-      }
-
-      // ---- theming (canvas side) --------------------------------------------------
-      // "night" dims architecture colors and lights a warm lamp at every desk.
-      // CSS handles the page chrome; office-extras.js calls applyCanvasTheme().
-      const P_DAY = Object.assign({}, P);
-      const ZONE_DAY = {};
-      for (const k of Object.keys(ZONES))
-        ZONE_DAY[k] = { fA: ZONES[k].fA, fB: ZONES[k].fB };
-      let THEME_NIGHT = false;
-      function dimHex(hex, f) {
-        const n = parseInt(hex.slice(1), 16);
-        const r = (((n >> 16) & 255) * f) | 0,
-          g = (((n >> 8) & 255) * f) | 0,
-          b = ((n & 255) * f) | 0;
-        return (
-          "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)
-        );
-      }
-      function applyCanvasTheme(name) {
-        THEME_NIGHT = name === "night";
-        const f = 0.55;
-        const dimKeys = [
-          "fA",
-          "fB",
-          "grout",
-          "wallTop",
-          "wallSide",
-          "wallShade",
-          "deskTop",
-          "deskSide",
-          "deskShade",
-          "rug",
-          "monitorOff"
-        ];
-        for (const k of dimKeys)
-          P[k] = THEME_NIGHT ? dimHex(P_DAY[k], f) : P_DAY[k];
-        for (const z of Object.keys(ZONES)) {
-          ZONES[z].fA = THEME_NIGHT ? dimHex(ZONE_DAY[z].fA, f) : ZONE_DAY[z].fA;
-          ZONES[z].fB = THEME_NIGHT ? dimHex(ZONE_DAY[z].fB, f) : ZONE_DAY[z].fB;
-        }
-        buildBackground();
-      }
-      window.applyCanvasTheme = applyCanvasTheme;
-
-      // ---- environment ------------------------------------------------------------
-      function zoneAt(tx, ty) {
-        for (const k of Object.keys(ZONES)) {
-          const z = ZONES[k];
-          if (tx >= z.x && tx < z.x + z.w && ty >= z.y && ty < z.y + z.h)
-            return z;
-        }
-        return null;
-      }
-      function drawFloor() {
-        // per-room floor tint — checker with grout; corridor uses base palette
-        for (let ty = 0; ty < ROWS; ty++) {
-          for (let tx = 0; tx < COLS; tx++) {
-            const z = zoneAt(tx, ty);
-            const c =
-              (tx + ty) & 1 ? (z ? z.fA : P.fA) : z ? z.fB : P.fB;
-            rect(tx * TILE, ty * TILE, TILE, TILE, c);
-            rect(tx * TILE, ty * TILE + TILE - 1, TILE, 1, P.grout);
-            rect(tx * TILE + TILE - 1, ty * TILE, 1, TILE, P.grout);
-          }
-        }
-      }
-      function drawWalls() {
-        // outer wall (3/4 view, top thicker)
-        rect(0, 0, W, 8, P.wallTop);
-        rect(0, 8, W, 2, P.wallShade);
-        rect(0, 0, 4, H, P.wallSide);
-        rect(W - 4, 0, 4, H, P.wallSide);
-        rect(0, H - 2, W, 2, P.wallShade);
-
-        // vertical dividers: planning|dev and dev|qa (stop at the corridor)
-        rect(11 * TILE + 6, 1 * TILE, 2, 16 * TILE, P.wallSide);
-        rect(11 * TILE + 6, 1 * TILE, 2, 2, P.wallTop);
-        rect(27 * TILE + 6, 1 * TILE, 2, 16 * TILE, P.wallSide);
-        rect(27 * TILE + 6, 1 * TILE, 2, 2, P.wallTop);
-        // horizontal divider above the break area, with three door gaps
-        const wy = 17 * TILE + 6;
-        rect(1 * TILE, wy, 4 * TILE, 2, P.wallSide); // 1..5
-        rect(7 * TILE, wy, 12 * TILE, 2, P.wallSide); // 7..19
-        rect(21 * TILE, wy, 12 * TILE, 2, P.wallSide); // 21..33
-        rect(35 * TILE, wy, 4 * TILE, 2, P.wallSide); // 35..39
-
-        // zone rugs (subtle floor accent under each room)
-        drawRug(ZONES.planning);
-        drawRug(ZONES.developer);
-        drawRug(ZONES.tester);
-        drawRug(ZONES.unassigned);
-      }
-      function drawRug(z) {
-        ctxCur.globalAlpha = 0.1;
-        rect(
-          z.x * TILE + 4,
-          z.y * TILE + 4,
-          z.w * TILE - 8,
-          z.h * TILE - 8,
-          z.color
-        );
-        ctxCur.globalAlpha = 1;
-      }
-      function drawZoneLabels() {
-        ctxCur.font = "6px 'Press Start 2P', monospace";
-        ctxCur.textBaseline = "top";
-        for (const k of Object.keys(ZONES)) {
-          const z = ZONES[k];
-          // tiny name plate behind the label so it reads on any floor tint
-          const wpx = z.label.length * 7 + 8;
-          ctxCur.globalAlpha = 0.55;
-          rect(z.x * TILE + 3, z.y * TILE + 2, wpx, 11, "#06090d");
-          ctxCur.globalAlpha = 1;
-          ctxCur.fillStyle = z.color;
-          ctxCur.globalAlpha = 0.8;
-          ctxCur.fillText(z.label, z.x * TILE + 7, z.y * TILE + 5);
-          ctxCur.globalAlpha = 1;
-        }
-      }
-
-      // Plants — corners + break area (kept clear of label area)
-      const PLANTS = [
-        { x: 38 * TILE + 1, y: 1 * TILE + 3 },
-        { x: 1 * TILE + 3, y: 22 * TILE - 2 },
-        { x: 38 * TILE + 1, y: 22 * TILE - 2 },
-        { x: 12 * TILE + 4, y: 20 * TILE + 4 },
-        { x: 26 * TILE, y: 21 * TILE + 2 }
-      ];
-      function drawPlant(x, y) {
-        rect(x + 1, y + 6, 5, 3, P.plantPot);
-        rect(x + 0, y + 9, 7, 1, "#5a3a20");
-        rect(x + 1, y + 3, 5, 2, P.plant);
-        rect(x + 0, y + 2, 7, 2, P.plantDark);
-        rect(x + 2, y + 1, 3, 2, P.plant);
-        rect(x + 3, y + 0, 1, 2, P.plant);
-      }
-
-      function drawDesk(tx, ty) {
-        const x = tx * TILE,
-          y = ty * TILE;
-        rect(x, y + 14, TILE * 3, 4, P.deskTop);
-        rect(x, y + 18, TILE * 3, 2, P.deskShade);
-        rect(x + 2, y + 20, 2, 6, P.deskSide);
-        rect(x + TILE * 3 - 4, y + 20, 2, 6, P.deskSide);
-        rect(x + TILE, y + 6, TILE + 4, 8, P.monitorBack);
-        rect(x + TILE + 1, y + 7, TILE + 2, 5, P.monitorOff);
-        rect(x + TILE + 8, y + 14, 4, 1, P.monitorBack);
-        rect(x + TILE - 2, y + 15, TILE + 8, 2, "#0d1117");
-        rect(x + 2, y + 15, 3, 3, "#a06650");
-        rect(x + 3, y + 14, 1, 1, "#c47a5e");
-        if (THEME_NIGHT) drawDeskLamp(tx, ty);
-      }
-      // night theme: a small desk lamp + warm pooled glow
-      function drawDeskLamp(tx, ty) {
-        const x = tx * TILE,
-          y = ty * TILE;
-        // glow pool (under the lamp, additive-ish layers)
-        ctxCur.globalAlpha = 0.09;
-        rect(x + 4, y + 2, TILE * 2 + 10, 18, "#ffb454");
-        ctxCur.globalAlpha = 0.07;
-        rect(x - 2, y - 2, TILE * 3 + 4, 26, "#ffd166");
-        ctxCur.globalAlpha = 1;
-        // lamp fixture on the right desk edge
-        rect(x + TILE * 2 + 8, y + 9, 2, 6, "#46555f");
-        rect(x + TILE * 2 + 6, y + 7, 6, 3, "#ffd166");
-        px(x + TILE * 2 + 8, y + 10, "#fff2c4");
-      }
-      function drawDeskScreenOn(tx, ty, tint) {
-        const x = tx * TILE,
-          y = ty * TILE;
-        rect(x + TILE + 1, y + 7, TILE + 2, 5, tint || P.monitorOn);
-        rect(x + TILE + 2, y + 9, 1, 1, "#7df0c6");
-        rect(x + TILE + 5, y + 10, 1, 1, "#7df0c6");
-        rect(x + TILE + 8, y + 9, 1, 1, "#ffd166");
-      }
-
-      // ---- break-area furniture ---------------------------------------------------
-      function drawCouch(tx, ty) {
-        const x = tx * TILE,
-          y = ty * TILE;
-        rect(x + 1, y + 4, TILE - 2, 5, "#3a4655");
-        rect(x + 1, y + 4, TILE - 2, 1, "#4a5868");
-        rect(x, y + 9, TILE, 5, "#4a5868");
-        rect(x, y + 13, TILE, 1, "#2a323e");
-        rect(x, y + 5, 2, 9, "#2a323e");
-        rect(x + TILE - 2, y + 5, 2, 9, "#2a323e");
-      }
-      function drawCoffeeTable(tx, ty) {
-        const x = tx * TILE,
-          y = ty * TILE;
-        rect(x, y + 8, TILE * 2, 3, "#5a4636");
-        rect(x, y + 11, TILE * 2, 1, "#3b2e23");
-        rect(x + 2, y + 12, 2, 3, "#3b2e23");
-        rect(x + TILE * 2 - 4, y + 12, 2, 3, "#3b2e23");
-        rect(x + 6, y + 5, 3, 3, "#a06650");
-        rect(x + 7, y + 4, 1, 1, "#c47a5e");
-      }
-      function drawCoffeeMachine(x, y) {
-        rect(x, y, 10, 14, "#222831");
-        rect(x + 1, y + 1, 8, 4, "#0d1117");
-        rect(x + 2, y + 2, 6, 2, "#3a2418");
-        rect(x + 3, y + 8, 4, 3, "#71828e");
-        rect(x + 4, y + 11, 2, 2, "#a06650");
-        rect(x + 8, y + 6, 1, 1, "#62d196");
-      }
-      function drawClock(x, y, t) {
-        rect(x - 1, y - 1, 12, 12, "#1a232e");
-        rect(x, y, 10, 10, "#d9e3e9");
-        rect(x + 4, y + 1, 2, 1, "#0d1117");
-        rect(x + 8, y + 4, 1, 2, "#0d1117");
-        rect(x + 4, y + 8, 2, 1, "#0d1117");
-        rect(x + 1, y + 4, 1, 2, "#0d1117");
-        const secs = (t / 1000) % 60;
-        const ang = (secs / 60) * Math.PI * 2 - Math.PI / 2;
-        const hx = x + 5 + Math.cos(ang) * 3;
-        const hy = y + 5 + Math.sin(ang) * 3;
-        rect(hx - 1, hy - 1, 2, 2, "#0d1117");
-        rect(x + 4, y + 4, 2, 2, "#ff6b6b");
-      }
-      function drawWhiteboard(x, y) {
-        rect(x - 1, y - 1, 28, 12, "#71828e");
-        rect(x, y, 26, 10, "#f0efe9");
-        rect(x + 2, y + 2, 8, 1, "#2c8db8");
-        rect(x + 2, y + 4, 14, 1, "#2c8db8");
-        rect(x + 2, y + 6, 6, 1, "#ff6b6b");
-        rect(x + 10, y + 6, 10, 1, "#ff6b6b");
-        rect(x + 2, y + 8, 18, 1, "#62d196");
-      }
-
-      // ---- static background cache --------------------------------------------
-      // Everything that never moves (floor, walls, labels, desks, furniture) is
-      // pre-rendered once per theme to an offscreen canvas and blitted per frame.
-      const bg = document.createElement("canvas");
-      bg.width = W;
-      bg.height = H;
-      const bctx = bg.getContext("2d");
-      function buildBackground() {
-        ctxCur = bctx;
-        drawFloor();
-        drawWalls();
-        for (const p of PLANTS) drawPlant(p.x, p.y);
-        for (const c of COUCHES) drawCouch(c.tx, c.ty);
-        drawCoffeeTable(13, 19);
-        drawCoffeeTable(36, 19);
-        drawCoffeeMachine(DECOR.coffeeMachine.x, DECOR.coffeeMachine.y);
-        drawWhiteboard(DECOR.whiteboard.x, DECOR.whiteboard.y);
-        // entry door (centre-bottom)
-        rect(ENTRY.tx * TILE + 2, ENTRY.ty * TILE - 2, TILE - 4, 4, "#3a2418");
-        rect(
-          ENTRY.tx * TILE + 4,
-          ENTRY.ty * TILE + 12,
-          TILE - 8,
-          3,
-          "#1c2a37"
-        );
-        // per-room door mats
-        for (const k of Object.keys(DOORS)) {
-          const d = DOORS[k];
-          rect(d.x * TILE + 4, d.y * TILE + 12, 8, 3, "#2c3845");
-        }
-        // desks per room
-        for (const team of Object.keys(DESKS))
-          for (const td of DESKS[team]) drawDesk(td[0], td[1]);
-        drawZoneLabels();
-        ctxCur = ctx;
-      }
-      buildBackground();
-      // rebuild once the pixel font finishes loading so labels render crisp
-      if (document.fonts && document.fonts.ready)
-        document.fonts.ready.then(buildBackground);
-
-      // ---- agents -----------------------------------------------------------------
-      // Logical sprite is 8×12, drawn at SPRITE_SCALE (2) → 16×24 on the canvas.
-      const AGENT_W = 8 * 2,
-        AGENT_H = 12 * 2;
-      const WALK_SPEED = 90; // px/sec
-      const CELEBRATE_MS = 2800;
-      let hasIngestedOnce = false; // suppress the door walk-in on the first load
-      const state = {
-        agents: new Map(),
-        orch: null,
-        t: 0,
-        spawnedAt: 0,
-        paused: false,
-        confetti: [], // {x,y,vx,vy,color,life}
-        prevTaskStates: null // Map(taskId → state) for handoff detection
-      };
-
-      function deskCenterPx(tx, ty) {
-        return {
-          x: tx * TILE + (TILE * 3) / 2 - AGENT_W / 2,
-          y: ty * TILE + 16 - AGENT_H
-        };
-      }
-      function couchPx(tx, ty) {
-        return { x: tx * TILE + (TILE - AGENT_W) / 2, y: ty * TILE + 4 };
-      }
-      function doorPx() {
-        return {
-          x: ENTRY.tx * TILE + (TILE - AGENT_W) / 2,
-          y: ENTRY.ty * TILE
-        };
-      }
-
-      function assignDesk(team, idx) {
-        const desks = DESKS[team] && DESKS[team].length
-          ? DESKS[team]
-          : DESKS.developer;
-        const [tx, ty] = desks[idx % desks.length];
-        return { tx, ty, ...deskCenterPx(tx, ty) };
-      }
-      function assignCouch(idx) {
-        const c = COUCHES[idx % COUCHES.length];
-        return { tx: c.tx, ty: c.ty, ...couchPx(c.tx, c.ty) };
-      }
-
-      // Where should an agent be, given its current status?
-      function targetFor(a) {
-        // errands (walk handoff / handback) trump everything else
-        if (a.errand) {
-          if (state.t < a.errand.until)
-            return { x: a.errand.x, y: a.errand.y, where: "errand" };
-          a.errand = null;
-        }
-        if (!a.assignedDesk) return a.entryPos;
-        switch (a.status) {
-          case "working":
-          case "needs_input":
-            return { x: a.assignedDesk.x, y: a.assignedDesk.y, where: "desk" };
-          case "completed":
-            if (a.celebrateUntil && state.t < a.celebrateUntil)
-              return {
-                x: a.assignedDesk.x,
-                y: a.assignedDesk.y,
-                where: "desk"
-              };
-            return {
-              x: a.assignedCouch.x,
-              y: a.assignedCouch.y,
-              where: "couch"
-            };
-          case "failed":
-            return { x: a.assignedDesk.x, y: a.assignedDesk.y, where: "desk" };
-          case "stopped":
-          case "idle":
-          default:
-            return {
-              x: a.assignedCouch.x,
-              y: a.assignedCouch.y,
-              where: "couch"
-            };
-        }
-      }
-
-      function statusFrame(a, t, seed) {
-        if (a.walking) return ((t + seed * 53) >> 7) & 1 ? "walk" : "walk2";
-        if (a.celebrateUntil && t < a.celebrateUntil) return "jump";
-        if (a.errand) return "idle"; // standing mid-handoff
-        if (a.atCouch) return "sit";
-        if (a.visualIdleUntil && t < a.visualIdleUntil) return "idle"; // QA waits for the handoff walk
-        if (a.status === "working")
-          return ((t + seed * 53) >> 7) & 1 ? "type" : "type2";
-        if (a.status === "needs_input") return "idle";
-        if (a.status === "completed") return "sit";
-        if (a.status === "failed") return "slump";
-        if (a.status === "stopped") return "idle";
-        return "idle";
-      }
-      function isBlinking(t, seed) {
-        return (t + seed * 137) % 3000 < 120;
-      }
-      function bobY(t, seed, a) {
-        if (a.status === "failed") return 0;
-        if (a.walking) return ((t + seed * 53) >> 7) & 1 ? -1 : 0;
-        if (a.atCouch) return 0;
-        const s = Math.sin((t + seed * 211) / 600);
-        if (a.status === "working") return s > 0 ? -1 : 0;
-        return s > 0.6 ? -2 : s > 0 ? -1 : 0;
-      }
-
-      // path-follow step: returns true if reached
-      function stepToward(a, dt) {
-        const tgt = targetFor(a);
-        const dx = tgt.x - a.x,
-          dy = tgt.y - a.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 1) {
-          a.x = tgt.x;
-          a.y = tgt.y;
-          a.walking = false;
-          a.atDesk = tgt.where === "desk";
-          a.atCouch = tgt.where === "couch";
-          return true;
-        }
-        const step = (WALK_SPEED * dt) / 1000;
-        const fr = Math.min(1, step / dist);
-        a.x += dx * fr;
-        a.y += dy * fr;
-        a.facing = dx < 0 ? "left" : "right";
-        a.walking = true;
-        a.atDesk = false;
-        a.atCouch = false;
-        return false;
-      }
-
-      function spawnConfetti(x, y) {
-        const colors = [P.plan, P.dev, P.test, P.ok, P.warn];
-        for (let i = 0; i < 18; i++) {
-          state.confetti.push({
-            x,
-            y,
-            vx: (Math.random() - 0.5) * 80,
-            vy: -40 - Math.random() * 70,
-            color: colors[(Math.random() * colors.length) | 0],
-            life: 1200 + Math.random() * 600
-          });
-        }
-      }
-      function updateConfetti(dt) {
-        for (const p of state.confetti) {
-          p.life -= dt;
-          p.x += (p.vx * dt) / 1000;
-          p.y += (p.vy * dt) / 1000;
-          p.vy += (120 * dt) / 1000;
-        }
-        state.confetti = state.confetti.filter((p) => p.life > 0);
-      }
-      function drawConfetti() {
-        for (const p of state.confetti) {
-          const a = Math.min(1, p.life / 600);
-          ctx.globalAlpha = a;
-          rect(p.x | 0, p.y | 0, 2, 2, p.color);
-        }
-        ctx.globalAlpha = 1;
-      }
-
-      // ---- walk handoff (dev → qa → dev) -------------------------------------
-      // Triggered by sprint-board task-state transitions diffed across polls.
-      function findAgentForTask(taskId, zone) {
-        const re = new RegExp(
-          "\\b" + String(taskId).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b",
-          "i"
-        );
-        let working = null,
-          fallback = null;
-        for (const a of state.agents.values()) {
-          if (a.team !== zone) continue;
-          if (re.test(a.name) || re.test(a.summary || "")) return a;
-          if (!working && a.status === "working") working = a;
-          if (!fallback) fallback = a;
-        }
-        return working || fallback;
-      }
-      function walkMsTo(a, x, y) {
-        return (Math.hypot(x - a.x, y - a.y) / WALK_SPEED) * 1000;
-      }
-      // dev finished a task → it walks the work over to the QA LAB; the QA
-      // sprite visibly waits (idle) until the dev arrives, then starts testing.
-      function startHandoff(taskId) {
-        const dev = findAgentForTask(taskId, "developer");
-        const qa = findAgentForTask(taskId, "tester");
-        if (!dev) return;
-        const spot = qa
-          ? { x: qa.assignedDesk.x - 22, y: qa.assignedDesk.y + 2 }
-          : { x: 28 * TILE + 6, y: 8 * TILE };
-        const ms = walkMsTo(dev, spot.x, spot.y);
-        dev.errand = { x: spot.x, y: spot.y, until: state.t + ms + 1400 };
-        if (qa) qa.visualIdleUntil = state.t + ms;
-      }
-      // QA passed → both the dev and the QA celebrate (hop + confetti)
-      function celebrateHandoff(taskId) {
-        const dev = findAgentForTask(taskId, "developer");
-        const qa = findAgentForTask(taskId, "tester");
-        for (const a of [dev, qa]) {
-          if (!a) continue;
-          a.errand = null;
-          a.celebrateUntil = state.t + CELEBRATE_MS;
-          spawnConfetti(a.x + AGENT_W / 2, a.y + 4);
-        }
-      }
-      // QA failed → the QA sprite walks the task back to the dev pod
-      function startHandback(taskId) {
-        const dev = findAgentForTask(taskId, "developer");
-        const qa = findAgentForTask(taskId, "tester");
-        if (!qa) return;
-        const spot = dev
-          ? { x: dev.assignedDesk.x + 22, y: dev.assignedDesk.y + 2 }
-          : { x: 19 * TILE, y: 8 * TILE };
-        const ms = walkMsTo(qa, spot.x, spot.y);
-        qa.errand = { x: spot.x, y: spot.y, until: state.t + ms + 1400 };
-      }
-      // diff board states between polls and fire the right animation
-      function detectHandoffs(board, first) {
-        if (!Array.isArray(board)) {
-          state.prevTaskStates = null;
-          return;
-        }
-        const prev = state.prevTaskStates;
-        if (prev && !first) {
-          for (const t of board) {
-            if (!t || !t.id) continue;
-            const was = prev.get(t.id);
-            if (!was || was === t.state) continue;
-            if (was === "dev" && t.state === "qa") startHandoff(t.id);
-            else if (was === "qa" && t.state === "done")
-              celebrateHandoff(t.id);
-            else if (was === "qa" && (t.state === "failed" || t.state === "dev"))
-              startHandback(t.id);
-          }
-        }
-        state.prevTaskStates = new Map(board.map((t) => [t.id, t.state]));
-      }
-
-      // Lifelike reaction bubbles — animated content per status.
-      function reactionFor(a, t) {
-        if (a.walking)
-          return a.errand ? { kind: "text", text: ">", color: P.dim } : null;
-        if (a.celebrateUntil && t < a.celebrateUntil)
-          return { kind: "star", color: P.ok };
-        if (a.errand) return { kind: "text", text: ">", color: P.dim };
-        switch (a.status) {
-          case "working": {
-            const n = (Math.floor(t / 350) % 3) + 1;
-            return { kind: "text", text: ".".repeat(n), color: P.dim };
-          }
-          case "needs_input":
-            return {
-              kind: "text",
-              text: ((t / 600) | 0) & 1 ? "?" : "!",
-              color: P.warn,
-              bob: true
-            };
-          case "completed":
-            return { kind: "text", text: "✓", color: P.ok };
-          case "failed":
-            return { kind: "text", text: "X", color: P.err, sweat: true };
-          case "idle":
-            return (t + hash(a.id) * 89) % 4500 < 2500
-              ? { kind: "text", text: "z", color: P.dim, drift: true }
-              : null;
-          case "stopped":
-            return null;
-          default:
-            return null;
-        }
-      }
-      function drawReactionBubble(x, y, kind, t) {
-        if (!kind) return;
-        const bob = kind.bob ? Math.sin(t / 200) | 0 : 0;
-        const drift = kind.drift ? Math.sin(t / 400) * 2 : 0;
-        const yy = y + bob;
-        if (kind.kind === "star") {
-          const dy = ((t / 120) | 0) % 4;
-          rect(x + 3, yy - 6 - dy, 2, 2, kind.color);
-          rect(x + 1, yy - 3 - dy, 1, 1, "#ffd166");
-          rect(x + 5, yy - 3 - dy, 1, 1, "#ffd166");
-          rect(x + 3, yy - 1 - dy, 1, 1, "#ffd166");
-          return;
-        }
-        rect(x, yy - 7, 9, 7, "#0a0e13");
-        for (let i = 0; i < 9; i++) {
-          px(x + i, yy - 7, P.ink);
-          px(x + i, yy - 1, P.ink);
-        }
-        for (let i = 0; i < 7; i++) {
-          px(x, yy - 7 + i, P.ink);
-          px(x + 8, yy - 7 + i, P.ink);
-        }
-        px(x + 3, yy, P.ink);
-        ctx.font = "6px 'Press Start 2P', monospace";
-        ctx.fillStyle = kind.color;
-        ctx.textBaseline = "top";
-        ctx.fillText(kind.text, x + 2 + drift, yy - 6);
-        if (kind.sweat) {
-          const wob = (Math.sin(t / 180) * 1) | 0;
-          rect(x + 10, yy - 4 + wob, 2, 3, "#56b6ff");
-          px(x + 11, yy - 5 + wob, "#7fc6ff");
-        }
-      }
-
-      // Draw an agent — supports walking, celebrating, sitting on couch, blink, bob.
-      function drawAgent(a) {
-        const pal = paletteFor(a.team);
-        const seed = hash(a.id);
-        pal.seed = a.id;
-        a.frame = statusFrame(a, state.t, seed);
-        const dy = bobY(state.t, seed, a) * SPRITE_SCALE;
-        let hop = 0;
-        if (a.celebrateUntil && state.t < a.celebrateUntil) {
-          hop = -Math.abs(Math.sin((state.t * Math.PI) / 200) * 6) | 0;
-        }
-        const blink = isBlinking(state.t, seed);
-        ctx.globalAlpha = 0.35;
-        rect(a.x, a.y + AGENT_H, AGENT_W, 2, "#000");
-        ctx.globalAlpha = 1;
-        if (a.facing === "left") {
-          ctx.save();
-          ctx.translate(a.x + AGENT_W, 0);
-          ctx.scale(-1, 1);
-          drawSprite(a.frame, 0, a.y + dy + hop, pal, { blink });
-          ctx.restore();
-        } else {
-          drawSprite(a.frame, a.x, a.y + dy + hop, pal, { blink });
-        }
-        // carried "work" folder while on a handoff errand
-        if (a.errand || (a.walking && a.errandCarry)) {
-          const fx = a.facing === "left" ? a.x - 3 : a.x + AGENT_W - 2;
-          rect(fx, a.y + dy + hop + 12, 5, 4, "#e8d28a");
-          rect(fx, a.y + dy + hop + 12, 5, 1, "#b9a55d");
-        }
-        // type sparkle (only while actually typing at desk)
-        if (
-          a.status === "working" &&
-          a.atDesk &&
-          !(a.visualIdleUntil && state.t < a.visualIdleUntil)
-        ) {
-          const sparkX = a.tx * TILE + TILE + 2 + (((state.t / 120) | 0) % 9);
-          px(sparkX, a.ty * TILE + 5, "#7df0c6");
-          if (a.frame === "type") px(sparkX + 2, a.ty * TILE + 4, "#ffd166");
-        }
-        drawReactionBubble(
-          a.x + AGENT_W / 2 - 4,
-          a.y + dy + hop - 2,
-          reactionFor(a, state.t),
-          state.t
-        );
-      }
-
-      // ---- networking -------------------------------------------------------------
-      async function fetchState() {
-        const u = new URL(window.location.href);
-        const demo = u.searchParams.get("demo") === "1" ? "?demo=1" : "";
-        try {
-          const r = await fetch("/api/state" + demo, { cache: "no-store" });
-          const data = await r.json();
-          return data;
-        } catch (e) {
-          return { error: e.message };
-        }
-      }
-
-      function teamOf(s) {
-        // use the server-assigned team if present; otherwise fall back to name heuristic
-        if (s.team && s.team !== "unassigned") return s.team;
-        const n = (s.name || s.agent || "").toLowerCase();
-        if (/^(pm|plan|planner|architect|design)/.test(n)) return "planning";
-        if (/^(dev|feat|fix|build|impl)/.test(n)) return "developer";
-        if (/^(test|qa|verify|review)/.test(n)) return "tester";
-        return "unassigned";
-      }
-
-      function ingest(data) {
-        if (!data || !data.sessions) {
-          state.agents.clear();
-          state.orch = null;
-          state.prevTaskStates = null;
-          document.getElementById("empty").style.display = "flex";
-          if (window.OfficeExtras) window.OfficeExtras.onState(data || {});
-          return;
-        }
-        window.__demoMode = !!data.demo;
-        const firstIngest = !hasIngestedOnce;
-        // room assignment: prefer the orchestrator worker.room, fallback to team
-        const workerRoom = {};
-        if (data.orch && Array.isArray(data.orch.workers)) {
-          for (const w of data.orch.workers)
-            if (w && w.id && w.room && ROOM_ZONE[w.room])
-              workerRoom[w.id] = ROOM_ZONE[w.room];
-        }
-        // Map by room/team to assign desk index
-        const byTeam = {
-          planning: [],
-          developer: [],
-          tester: [],
-          unassigned: []
-        };
-        for (const s of data.sessions) {
-          const team = workerRoom[s.id] || teamOf(s);
-          byTeam[team] ||= [];
-          byTeam[team].push(s);
-        }
-        // Couch index counter (used across all teams) — gives every agent its own break spot.
-        let couchIdx = 0;
-        const next = new Map();
-        for (const team of Object.keys(byTeam)) {
-          byTeam[team].forEach((s, idx) => {
-            const prev = state.agents.get(s.id);
-            const desk =
-              team === "unassigned"
-                ? assignCouch(couchIdx) // unassigned sessions live on the couch
-                : assignDesk(team, idx);
-            const couch = assignCouch(couchIdx++);
-            const newStatus = s.status || "idle";
-            // Detect completion transition → trigger celebration (see notes in
-            // git history: only on a TRUE status change inside this session).
-            let celebrateUntil = prev ? prev.celebrateUntil : 0;
-            if (
-              newStatus === "completed" &&
-              hasIngestedOnce &&
-              prev &&
-              prev.status !== "completed"
-            ) {
-              celebrateUntil = state.t + CELEBRATE_MS;
-              spawnConfetti(prev.x + AGENT_W / 2, prev.y + 4);
-            }
-            // New agent? First ingest snaps to target (no stampede); afterwards
-            // new sessions spawn at the entry door and walk in.
-            const entry = doorPx();
-            const tgtX =
-              newStatus === "idle" || newStatus === "stopped"
-                ? couch.x
-                : desk.x;
-            const tgtY =
-              newStatus === "idle" || newStatus === "stopped"
-                ? couch.y
-                : desk.y;
-            const startX = prev ? prev.x : hasIngestedOnce ? entry.x : tgtX;
-            const startY = prev ? prev.y : hasIngestedOnce ? entry.y : tgtY;
-            const a = {
-              id: s.id,
-              name: s.name || s.agent || s.id,
-              summary: s.summary || s.task || "",
-              team,
-              status: newStatus,
-              tx: desk.tx,
-              ty: desk.ty,
-              x: startX,
-              y: startY,
-              assignedDesk: { x: desk.x, y: desk.y, tx: desk.tx, ty: desk.ty },
-              assignedCouch: {
-                x: couch.x,
-                y: couch.y,
-                tx: couch.tx,
-                ty: couch.ty
-              },
-              entryPos: entry,
-              facing: prev ? prev.facing : "right",
-              walking: prev ? prev.walking : hasIngestedOnce && !prev,
-              atDesk: prev ? prev.atDesk : !hasIngestedOnce && tgtX === desk.x,
-              atCouch: prev
-                ? prev.atCouch
-                : !hasIngestedOnce && tgtX === couch.x,
-              celebrateUntil,
-              // handoff continuity across polls
-              errand: prev ? prev.errand : null,
-              visualIdleUntil: prev ? prev.visualIdleUntil : 0,
-              frame: "idle"
-            };
-            next.set(s.id, a);
-          });
-        }
-        state.agents = next;
-        state.orch = data.orch || null;
-
-        // walk handoffs from board transitions (tolerates orch absent)
-        detectHandoffs(state.orch && state.orch.board, firstIngest);
-        hasIngestedOnce = true;
-
-        // header stats
-        let act = 0,
-          blk = 0,
-          done = 0;
-        for (const a of state.agents.values()) {
-          if (a.status === "working") act++;
-          else if (a.status === "needs_input") blk++;
-          else if (a.status === "completed") done++;
-        }
-        document.getElementById("s-active").textContent = act;
-        document.getElementById("s-blocked").textContent = blk;
-        document.getElementById("s-done").textContent = done;
-        document
-          .getElementById("stat-blocked")
-          .classList.toggle("alert", blk > 0);
-
-        // team XP — sum across knowledge if any
-        let xp = 0;
-        if (data.knowledge) {
-          for (const k of Object.values(data.knowledge)) {
-            if (k && k.teamXP)
-              xp += Object.values(k.teamXP).reduce((a, b) => a + (+b || 0), 0);
-          }
-        }
-        document.getElementById("s-team").textContent = xp || "—";
-
-        // banner on error
-        const banner = document.getElementById("banner");
-        if (data.error) {
-          banner.style.display = "block";
-          banner.innerHTML = `Can't reach Claude CLI: <code>${escapeHtml(data.error)}</code>`;
-          document.getElementById("live").classList.add("err");
-        } else {
-          banner.style.display = "none";
-          document.getElementById("live").classList.remove("err");
-        }
-
-        // empty-state overlay
-        document.getElementById("empty").style.display =
-          state.agents.size === 0 ? "flex" : "none";
-
-        // sprint board
-        renderBoard(state.orch);
-
-        // feature subsystems (HUD, controls, paused overlay…)
-        if (window.OfficeExtras) window.OfficeExtras.onState(data);
-      }
-
-      function escapeHtml(s) {
-        return String(s).replace(
-          /[&<>"']/g,
-          (c) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;"
-            })[c]
-        );
-      }
-
-      // per-task control buttons (Retry / Force pass / Force fail) — wired to
-      // POST /api/control by office-extras.js via event delegation on #board.
-      function taskButtons(t) {
-        if (window.__replayMode) return "";
-        const dis = window.__demoMode
-          ? ' disabled title="demo"'
-          : ' title="POST /api/control"';
-        const id = escapeHtml(t.id || "");
-        const b = [];
-        const st = t.state;
-        if (st === "failed" || st === "cancelled")
-          b.push(
-            `<button class="act" data-act="retry" data-task="${id}"${dis}>RETRY</button>`
-          );
-        if (st === "dev" || st === "qa" || st === "failed")
-          b.push(
-            `<button class="act ok" data-act="force-pass" data-task="${id}"${dis}>FORCE PASS</button>`
-          );
-        if (st === "planned" || st === "dev" || st === "qa")
-          b.push(
-            `<button class="act bad" data-act="force-fail" data-task="${id}"${dis}>FORCE FAIL</button>`
-          );
-        return b.length ? `<div class="acts">${b.join("")}</div>` : "";
-      }
-
-      function renderBoard(orch) {
-        const el = document.getElementById("board");
-        if (!orch || !orch.board || !orch.board.length) {
-          el.style.display = "none";
-          return;
-        }
-        el.style.display = "block";
-        document.getElementById("bd-epic").textContent = orch.epic || "—";
-        const phEl = document.getElementById("bd-phase");
-        phEl.textContent = orch.paused
-          ? "PAUSED"
-          : (orch.phase || "idle").toUpperCase();
-        phEl.className =
-          "ph " +
-          (orch.paused
-            ? "paused"
-            : orch.active
-              ? "run"
-              : orch.phase === "done"
-                ? "done"
-                : "");
-
-        const lanes = { planned: [], dev: [], qa: [], done: [], failed: [] };
-        for (const t of orch.board) {
-          const s = lanes[t.state]
-            ? t.state
-            : t.state === "cancelled"
-              ? "failed"
-              : "planned";
-          lanes[s].push(t);
-        }
-        const stageLabel = {
-          planned: "queued",
-          dev: "building",
-          qa: "verifying",
-          done: "shipped",
-          failed: "failed",
-          cancelled: "cancelled"
-        };
-        for (const k of Object.keys(lanes)) {
-          document.getElementById("bd-c-" + k).textContent = lanes[k].length;
-          document.getElementById("lane-" + k).innerHTML = lanes[k]
-            .map(
-              (t) =>
-                `<div class="card ${t.state === "cancelled" ? "failed" : k}">` +
-                `<div class="id">${escapeHtml(t.id || "")}${t.retries ? ` · ↻${t.retries}` : ""}</div>` +
-                `<span class="ti">${escapeHtml(t.title || "")}</span>` +
-                `<div class="pg"><i></i></div>` +
-                `<div class="stg">${stageLabel[t.state] || stageLabel[k] || k}</div>` +
-                taskButtons(t) +
-                `</div>`
-            )
-            .join("");
-        }
-        document.getElementById("bd-log").textContent =
-          (orch.log && orch.log.slice(-1)[0]) || "—";
-      }
-
-      // ---- render loop ------------------------------------------------------------
-      let last = performance.now();
-      function frame(now) {
-        const dt = Math.min(now - last, 100);
-        last = now;
-        state.t += dt;
-
-        // static environment (pre-rendered per theme)
-        ctx.drawImage(bg, 0, 0);
-        // animated decor
-        drawClock(DECOR.clock.x, DECOR.clock.y, state.t);
-
-        // light up the monitors of working/typing agents (only when at desk)
-        for (const a of state.agents.values()) {
-          if (
-            a.status === "working" &&
-            a.atDesk &&
-            !(a.visualIdleUntil && state.t < a.visualIdleUntil)
-          ) {
-            drawDeskScreenOn(
-              a.tx,
-              a.ty,
-              a.team === "tester"
-                ? "#2a1b2e"
-                : a.team === "planning"
-                  ? "#2a2418"
-                  : P.monitorOn
-            );
-          }
-        }
-
-        // physics: step agents toward their targets, update confetti
-        for (const a of state.agents.values()) stepToward(a, dt);
-        updateConfetti(dt);
-
-        // draw back-to-front (by y) so closer agents overlap farther ones
-        const arr = [...state.agents.values()].sort((p, q) => p.y - q.y);
-        for (const a of arr) drawAgent(a);
-
-        // confetti above everything
-        drawConfetti();
-
-        requestAnimationFrame(frame);
-      }
-
-      // ---- interaction: hover tooltip --------------------------------------------
-      // Mapping is letterbox-aware (canvas uses object-fit: contain so
-      // presentation mode keeps the pixel aspect with no distortion).
-      const tip = document.getElementById("tip");
-      const zonelabel = document.getElementById("zonelabel");
-      function toLogical(clientX, clientY) {
-        const r = cvs.getBoundingClientRect();
-        const scale = Math.min(r.width / W, r.height / H);
-        const ox = (r.width - W * scale) / 2;
-        const oy = (r.height - H * scale) / 2;
-        return {
-          x: (clientX - r.left - ox) / scale,
-          y: (clientY - r.top - oy) / scale
-        };
-      }
-      function pickAt(cx, cy) {
-        const l = toLogical(cx, cy);
-        for (const a of state.agents.values()) {
-          if (
-            l.x >= a.x - 2 &&
-            l.x <= a.x + AGENT_W + 2 &&
-            l.y >= a.y - 2 &&
-            l.y <= a.y + AGENT_H + 2
-          ) {
-            return a;
-          }
-        }
-        return null;
-      }
-      cvs.addEventListener("mousemove", (e) => {
-        const a = pickAt(e.clientX, e.clientY);
-        if (!a) {
-          tip.style.display = "none";
-          updateZoneLabel(e);
-          return;
-        }
-        tip.style.display = "block";
-        tip.style.left = e.clientX + 12 + "px";
-        tip.style.top = e.clientY + 12 + "px";
-        tip.innerHTML = `<b>${escapeHtml(a.name)}</b><div>${escapeHtml(a.summary || "(no summary)")}</div><div class="meta">${a.team.toUpperCase()} · ${a.status.toUpperCase()}</div>`;
-      });
-      cvs.addEventListener("mouseleave", () => {
-        tip.style.display = "none";
-      });
-
-      function updateZoneLabel(e) {
-        const l = toLogical(e.clientX, e.clientY);
-        const ztx = l.x / TILE,
-          zty = l.y / TILE;
-        for (const k of Object.keys(ZONES)) {
-          const z = ZONES[k];
-          if (ztx >= z.x && ztx < z.x + z.w && zty >= z.y && zty < z.y + z.h) {
-            zonelabel.innerHTML = `<b>${z.label}</b>`;
-            return;
-          }
-        }
-        zonelabel.innerHTML = `<b>HOVER</b> an agent for details`;
-      }
-
-      // ---- bootstrap --------------------------------------------------------------
-      async function poll() {
-        if (window.__replayMode) return; // replay feeds ingest() itself
-        const data = await fetchState();
-        ingest(data);
-      }
-      poll();
-      setInterval(poll, 2000);
-      requestAnimationFrame(frame);
-
-      // pause animation when tab hidden (battery courtesy)
-      document.addEventListener("visibilitychange", () => {
-        state.paused = document.hidden;
-      });
-    </script>
-    <script src="office-extras.js"></script>
-  </body>
+if(new URLSearchParams(location.search).get('replay')) window.__replayMode=true;
+poll(); setInterval(poll,5000);
+</script>
+<script src="office-extras.js"></script>
+</body>
 </html>

@@ -12,6 +12,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and 
 ### Changed
 
 - **`/` now serves the full pixel office** (`server.js`) — the control plane (pause / resume / cancel) and the cost/budget HUD live in `office-extras.js`, which only `pixel.html` loads. Visiting the default route previously served the leaner `index.html` with none of those controls. The pixel office is now the default; `index.html` stays reachable at `/index.html`.
+- **Unified office (`pixel.html` rebuilt on the Agent Office engine)** — `pixel.html` now uses index.html's animated character/office-space canvas (humans walking, typing, cheering across PM / Dev / QA / Lobby zones) and gains the **Sprint Board** and **Project Brain (project-folder + LEARN)** sections, *while keeping* the cost/budget HUD and pause/resume/cancel/theme/present control plane. One office with the floor view, the sprint, the project knowledge, and live controls — instead of two divergent pages. `office-extras.js` is wired via a shared global `ingest(data)` (also used by `?replay=`).
 
 ## [0.3.0] — 2026-06-10
 
