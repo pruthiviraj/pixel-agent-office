@@ -814,7 +814,7 @@ function renderBrain(){
     return;
   }
   if(!curProject||!knowledge[curProject]) curProject=dirs[0];
-  tabs.innerHTML=dirs.map(d=>`<button class="${d===curProject?'on':''}" onclick="pickProject('${esc(d)}')">${esc(base(d))}</button>`).join('');
+  tabs.innerHTML=dirs.map(d=>`<button class="${d===curProject?'on':''}" data-proj="${esc(d)}">${esc(base(d))}</button>`).join('');
 
   const k=knowledge[curProject];
   const know=document.getElementById('brain-know');
@@ -823,7 +823,7 @@ function renderBrain(){
       <span>${esc(curProject)}</span>
       <span>· ${k.stats?.completed||0} done / ${k.stats?.failed||0} failed</span>
       <span>· ${k.learnedAt?'learned '+age(k.learnedAt)+' ago':'not yet studied'}</span>
-      <button class="learnbtn" ${k.learning?'disabled':''} onclick="learn('${esc(curProject)}')">${k.learning?'STUDYING…':'⟳ LEARN THIS FOLDER'}</button>
+      <button class="learnbtn" data-cwd="${esc(curProject)}" ${k.learning?'disabled':''}>${k.learning?'STUDYING…':'⟳ LEARN THIS FOLDER'}</button>
     </div>
     <pre>${esc(k.summary || (k.learning?'reading the codebase with `claude -p`…':'press LEARN — the office sends a headless `claude -p` into this folder and stores what it finds.'))}</pre>
     ${k.lastError?`<div class="brain-err">⚠ learn failed: ${esc(k.lastError)}<br><span style="color:var(--faint)">the viewer shells <code>claude -p</code> in this folder — it must be on PATH and logged in (Windows also needs git-bash).</span></div>`:''}
@@ -842,6 +842,15 @@ async function learn(cwd){
   knowledge[cwd]={...knowledge[cwd],learning:true};renderBrain();
   await fetch('/api/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cwd})});
 }
+// Project-switch tabs + LEARN button use data-attributes, not inline onclick:
+// project paths contain backslashes on Windows that an onclick="fn('C:\\…')"
+// string would mangle (\U, \n, \t …), which silently broke both.
+document.getElementById('brain-tabs').addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('button[data-proj]'); if(b) pickProject(b.dataset.proj);
+});
+document.getElementById('brain-know').addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('button[data-cwd]'); if(b&&!b.disabled) learn(b.dataset.cwd);
+});
 
 /* ===================================================================== *
  *  POLL + DRAWER                                                         *
