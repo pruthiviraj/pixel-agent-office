@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] — 2026-06-11
+
+### Fixed
+
+- **Viewer and sprint now share one state dir** (`orchestrate.js`, `server.js`) — state (`team.json`, `history/`, control channel) was keyed off `__dirname/data`, so when `npx github:...` resolved the viewer and the sprint to different cache installs they wrote/read different `data/` dirs and the office fell back to its built-in **demo** agents while a real sprint was running. `DATA_DIR` now resolves to an install-location-independent `~/.pixel-agent-office/data` (override with `PAO_DATA_DIR`); both startup banners print the resolved path.
+
+### Changed
+
+- **`/` now serves the full pixel office** (`server.js`) — the control plane (pause / resume / cancel) and the cost/budget HUD live in `office-extras.js`, which only `pixel.html` loads. Visiting the default route previously served the leaner `index.html` with none of those controls. The pixel office is now the default; `index.html` stays reachable at `/index.html`.
+
 ## [0.3.0] — 2026-06-10
 
 ### Added
