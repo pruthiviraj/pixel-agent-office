@@ -2,7 +2,7 @@
 
 **A live pixel-art office where a team of [Claude Code](https://claude.com/claude-code) agents builds your project — a PM plans, developers implement in parallel, and QA verifies every piece before it ships.**
 
-You hand it an *epic* (plain-English goal). A **PM agent** breaks it into parallel tasks. **Developer agents** implement them. Each finished piece goes to a **QA agent** that runs your tests and votes **PASS / FAIL** — failures loop back to the developer with the feedback. The whole team animates in a retro pixel office you can watch in your browser — and now you can **steer it live** (pause, cancel, retry, force a verdict), watch the **cost HUD** tick, cap the spend with a **budget**, and **replay** any past sprint.
+You hand it an *epic* (plain-English goal). A **PM agent** breaks it into parallel tasks. **Developer agents** implement them. Each finished piece goes to a **QA agent** that runs your tests and votes **PASS / FAIL** — failures loop back to the developer with the feedback. The whole team animates in a retro pixel office you can watch in your browser — and now you can **steer it live** (pause, cancel, retry, force a verdict), **reply to an agent in-place** when it needs input (no terminal switch), watch the **cost HUD** tick, cap the spend with a **budget**, and **replay** any past sprint. Over time a **named crew levels up per project** — the same agents return more senior every sprint.
 
 It's a real orchestration layer (not a toy): each worker is a full headless `claude -p` agent that edits files and runs commands in *your* repo.
 
@@ -18,9 +18,9 @@ It's a real orchestration layer (not a toy): each worker is a full headless `cla
             PASS ✓                  FAIL ✗ ──▶ rework ──▶ QA ✓
 ```
 
-> 📺 **Watch it live:** `node server.js` → open **http://localhost:4040** → press **`?demo=1`** for a sample office with no setup.
+![The Pixel Agent Office — a PM, developers and QA building a project live, with an XP-levelling crew](docs/office.gif)
 
-*(Add a screenshot/GIF of the office here — `docs/office.png`. The `?demo=1` view is perfect for it.)*
+> 📺 **Watch it live:** `node server.js` → open **http://localhost:4040** → press **`?demo=1`** for a sample office with no setup (that's the view above).
 
 ---
 
@@ -30,6 +30,8 @@ It's a real orchestration layer (not a toy): each worker is a full headless `cla
 |---|---|
 | **PM → dev → QA loop** | Work is decomposed, parallelised across a concurrency cap, dependency-ordered, and gated by QA. Failures retry with the rejection reason. |
 | **Control plane** | Pause / resume / cancel the sprint and retry / force-pass / force-fail individual tasks — from the office UI, mid-run. |
+| **Answer agents in-place** | When an agent needs input, click it and reply right in the office — your guidance is injected into the task and it re-runs. No switching back to the terminal. |
+| **Persistent project crew** | Each project keeps a named team (`roster.json`) that earns XP for shipped work and levels up **Junior → Mid → Senior → Staff → Principal** — the same agents return more senior every sprint, building tenure on your codebase. |
 | **Cost & budget HUD** | Live per-worker and sprint-total cost, tokens in/out, model, tasks/hour — parsed straight from each worker's `claude -p --output-format json` result. Set `ORCH_BUDGET_USD` to hard-cap spend. |
 | **History & replay** | Every sprint is archived to `data/history/<runId>.json` with a timestamped event log; browse and replay past runs in the viewer. |
 | **Webhook** | `ORCH_WEBHOOK_URL` gets a POST with the full sprint history JSON when the sprint completes. |
