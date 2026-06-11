@@ -690,6 +690,19 @@ function execCommand(c) {
         note(`✗ ${t.id} FORCE-FAILED by operator${c.reason ? " — " + c.reason : ""}`);
       } else note(`⚠ force-fail ignored — ${c.taskId || "?"} not active`);
       break;
+    case "guide":
+      if (t) {
+        t.guidance = (t.guidance ? t.guidance + "\n" : "") + (c.reason || "").trim();
+        note(`💬 ${t.id} — operator answered from the office: "${shorten(c.reason || "", 60)}"`);
+        // re-run the task with the new guidance if it's finished/idle; if it's
+        // still in flight, the guidance is picked up on the next rework.
+        if (["failed", "cancelled", "done"].includes(t.state)) {
+          killTask(t); t.state = "planned"; t.retries = 0;
+          for (const wid of [`${t.id}-dev`, `${t.id}-qa`]) if (workers[wid]) setWorker(wid, { status: "idle", summary: "re-queued with your guidance" });
+          note(`↻ ${t.id} re-queued with your guidance`);
+        }
+      } else note(`⚠ guide ignored — ${c.taskId || "?"} not found`);
+      break;
     default:
       note(`⚠ unknown control command: ${c.type}`);
   }
@@ -754,6 +767,7 @@ function devPrompt(t) {
     t.components.length ? `Components: ${t.components.join(", ")}` : "",
     t.acceptance.length ? `Acceptance criteria:\n- ${t.acceptance.join("\n- ")}` : "",
     t.notes ? `\nPREVIOUS QA REJECTED YOUR WORK — fix this specifically:\n${t.notes}` : "",
+    t.guidance ? `\nOPERATOR GUIDANCE (the human watching the office sent this — follow it):\n${t.guidance}` : "",
     lessonsBlock(),
     ``,
     fill(PROFILE.devGuidance),

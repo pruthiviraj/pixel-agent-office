@@ -192,6 +192,20 @@ body.present header,body.present #banner,body.present #board,body.present #brain
 body.present footer,body.present #legend{display:none!important}
 body.present #stage{position:fixed;inset:0;margin:0;border:none;border-radius:0;max-height:none;aspect-ratio:auto;z-index:40}
 body.present #hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;margin:0}
+/* drawer reply + per-task board controls */
+#d-reply{border-top:1px solid var(--line);padding:12px 20px;display:none;flex-direction:column;gap:8px}
+#d-reply.on{display:flex}
+#d-reply-hint{font-size:10.5px;color:var(--faint);line-height:1.5}
+#d-reply textarea{width:100%;resize:vertical;background:#0d141b;border:1px solid var(--line);border-radius:5px;
+  color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 10px;min-height:48px}
+#d-reply textarea:focus{outline:none;border-color:var(--dev)}
+#d-reply button{align-self:flex-end;font-family:var(--disp);font-size:10.5px;letter-spacing:.1em;color:var(--ink);
+  background:rgba(79,214,190,.1);border:1px solid rgba(79,214,190,.5);border-radius:4px;padding:6px 14px;cursor:pointer}
+#d-reply button:hover{background:rgba(79,214,190,.2)}
+#board .card .acts{display:flex;gap:5px;margin-top:7px}
+#board .card .acts button{font-family:var(--mono);font-size:10px;line-height:1;padding:3px 7px;border-radius:3px;
+  border:1px solid var(--line);background:#0d141b;color:var(--dim);cursor:pointer}
+#board .card .acts button:hover{border-color:var(--dev);color:var(--dev)}
 </style>
 </head>
 <body>
@@ -276,6 +290,11 @@ body.present #hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-
   <div class="dhead"><h2 id="d-title">session</h2><button onclick="closeDrawer()">ESC</button></div>
   <div class="dcmd" id="d-cmd"></div>
   <pre id="d-logs"></pre>
+  <div id="d-reply">
+    <div id="d-reply-hint"></div>
+    <textarea id="d-reply-text" rows="2" placeholder="Reply to this agent / give guidance — the task re-runs with your input…"></textarea>
+    <button id="d-reply-send">Send to agent ▸</button>
+  </div>
 </aside>
 
 <div id="toast"></div>
@@ -742,6 +761,11 @@ function renderBoard(){
         ${t.retries?`<div class="rw">↻ ${t.retries} rework${t.retries>1?'s':''}</div>`:''}
         <div class="stg">${STG[t.state]||esc(t.state)}</div>
         <div class="pg"><i></i></div>
+        ${(orch&&orch.active&&!DEMO)?`<div class="acts">
+          ${['failed','cancelled'].includes(t.state)?`<button class="act" data-act="retry" data-task="${esc(t.id)}" title="re-queue">↻ retry</button>`:''}
+          ${['dev','qa','planned'].includes(t.state)?`<button class="act" data-act="force-pass" data-task="${esc(t.id)}" title="mark shipped">✓ pass</button>`:''}
+          ${['dev','qa','planned'].includes(t.state)?`<button class="act" data-act="force-fail" data-task="${esc(t.id)}" title="mark failed">✗ fail</button>`:''}
+        </div>`:''}
       </div>`).join('');
     return `<div class="lane"><h3>${L.label}<b>${cards.length}</b></h3>${inner||''}</div>`;
   }).join('');
@@ -848,12 +872,20 @@ async function poll(){
   }
 }
 
+let curReplyTask=null;
 async function openDrawer(id){
   const s=sessions.find(x=>x.id===id) || (chars[id]&&chars[id].session);
   document.getElementById('d-title').textContent=s?s.name:id;
   document.getElementById('d-cmd').innerHTML=id?`attach: <code>claude attach ${esc(id)}</code> · stop: <code>claude stop ${esc(id)}</code>`:'';
   document.getElementById('drawer').classList.add('open');
   document.getElementById('scrim').classList.add('open');
+  // reply box — orchestrated tasks can be answered right here (no terminal)
+  const rep=document.getElementById('d-reply'); curReplyTask=(s&&s.taskId)||null;
+  if(curReplyTask && !DEMO){
+    rep.classList.add('on');
+    document.getElementById('d-reply-hint').textContent=`Answer ${curReplyTask}: your guidance is injected into the task and it re-runs — no need to switch to the terminal.`;
+    document.getElementById('d-reply-text').value='';
+  } else { rep.classList.remove('on'); }
   const pre=document.getElementById('d-logs');pre.textContent='loading work log…';
   if(DEMO){pre.textContent='[demo] real sessions stream `claude logs '+id+'` output here';return;}
   try{const r=await fetch('/api/logs/'+encodeURIComponent(id));const d=await r.json();
@@ -862,6 +894,19 @@ async function openDrawer(id){
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+async function sendReply(){
+  const text=document.getElementById('d-reply-text').value.trim();
+  if(!curReplyTask||!text) return;
+  const toast=(m,e)=>{ if(window.OfficeExtras&&window.OfficeExtras.toast) window.OfficeExtras.toast(m,e); };
+  try{
+    const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:'guide',taskId:curReplyTask,reason:text})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.ok){ toast(`sent to ${curReplyTask} ▸ re-running with your input`); closeDrawer(); }
+    else toast('reply error: '+((j&&j.error)||r.status),true);
+  }catch(e){ toast('reply failed: '+e.message,true); }
+}
+document.getElementById('d-reply-send').addEventListener('click', sendReply);
 
 if(new URLSearchParams(location.search).get('replay')) window.__replayMode=true;
 poll(); setInterval(poll,5000);

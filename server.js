@@ -115,8 +115,8 @@ function loadTeamLogs() {
 
 // ---------- control channel (UI -> orchestrate.js via data/control.json) --
 
-const CONTROL_TYPES = new Set(["pause", "resume", "cancel", "retry", "force-pass", "force-fail"]);
-const CONTROL_NEEDS_TASK = new Set(["retry", "force-pass", "force-fail"]);
+const CONTROL_TYPES = new Set(["pause", "resume", "cancel", "retry", "force-pass", "force-fail", "guide"]);
+const CONTROL_NEEDS_TASK = new Set(["retry", "force-pass", "force-fail", "guide"]);
 
 function appendControl(cmd) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -533,6 +533,7 @@ const server = http.createServer(async (req, res) => {
             id: w.id, name: w.name, cwd: w.cwd || team.project || "",
             startedAt: w.startedAt || null, status: w.status || "working",
             summary: w.summary || "", team: w.team || "unassigned", orchestrated: true,
+            taskId: w.taskId || null, agentName: w.agentName || null,
           });
         }
       }

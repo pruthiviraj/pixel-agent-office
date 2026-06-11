@@ -7,6 +7,7 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and 
 
 ### Added
 
+- **Answer agents from the office — no terminal round-trip** (drawer reply + control plane). Click an orchestrated agent and a reply box appears: your text is sent as a `guide` control command, injected into the task as "OPERATOR GUIDANCE", and the task re-runs with it (re-queued if it had finished/failed). The sprint board also regains per-task **Retry / Pass / Fail** controls. So when an agent raises its hand for input you respond in-place instead of switching screens.
 - **Persistent per-project crew with XP + leveling** (`orchestrate.js`, `server.js`, Project Brain). Each project keeps a named team (`roster.json`, keyed by project path) that **recurs across sprints**: agents are assigned to PM/dev/QA work, earn XP for **shipped** tasks (dev +2, tester +1, PM +1 per shipped task), and level up **Junior → Mid → Senior → Staff → Principal** (0 / 3 / 8 / 20 / 40 xp). Fixed crew sized to the concurrency cap; same names return more senior each run. The office **Project Brain** now shows the roster (name · level · xp · bar-to-next-tier · sprints/tasks of tenure) instead of bare aggregate XP, and promotions log live ("★ Maya promoted: MID → SENIOR").
 
 ### Fixed
