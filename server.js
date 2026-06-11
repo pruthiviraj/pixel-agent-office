@@ -31,7 +31,12 @@ const TOKEN = (process.env.OFFICE_TOKEN || "").trim();     // empty = auth disab
 const AUTO_LEARN = process.env.AUTO_LEARN === "1";
 const AUTO_LEARN_TTL = 24 * 3600e3; // re-learn at most once a day
 const PUBLIC_DIR = path.join(__dirname, "public");
-const DATA_DIR = path.join(__dirname, "data");
+// Must match orchestrate.js exactly: install-location-independent so the viewer
+// and the orchestrator share state even when launched from different npx caches.
+// Override with PAO_DATA_DIR.
+const DATA_DIR = process.env.PAO_DATA_DIR
+  ? path.resolve(process.env.PAO_DATA_DIR)
+  : path.join(os.homedir(), ".pixel-agent-office", "data");
 const KNOWLEDGE_FILE = path.join(DATA_DIR, "knowledge.json");
 const JOBS_DIR = path.join(
   process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude"),
@@ -608,7 +613,8 @@ server.listen(PORT, BIND, () => {
   const t = TOKEN ? `?t=${encodeURIComponent(TOKEN)}` : "";
   console.log(`\n  Agent Office`);
   console.log(`  → ${base}/${t}`);
-  console.log(`  → ${base}/?demo=1   (sample office, no sessions needed)\n`);
+  console.log(`  → ${base}/?demo=1   (sample office, no sessions needed)`);
+  console.log(`  data : ${DATA_DIR}   (set PAO_DATA_DIR to match a running sprint)\n`);
   if (TOKEN) {
     console.log(`  Auth: OFFICE_TOKEN is set — /api/* require Bearer token.`);
     console.log(`         Open the URL above; the token is auto-stored in your browser.\n`);

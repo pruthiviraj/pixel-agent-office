@@ -57,6 +57,8 @@ npx github:pruthiviraj/pixel-agent-office                                       
 
 The first positional arg becomes the sprint goal (file path or inline text). A real run **auto-creates an `agent/run-*` branch** and refuses to touch `main`/`master` or a dirty worktree — rollback is `git branch -D <branch>`.
 
+> 🗂️ **The sprint and the viewer share one state dir** (`~/.pixel-agent-office/data`), so the office shows the live run no matter which `npx` cache each command resolved to. Override it with `PAO_DATA_DIR` if you want runs isolated per project (`PAO_DATA_DIR=./.pao-data npx github:pruthiviraj/pixel-agent-office …` for both the sprint and the viewer). If the viewer ever shows the static **demo** agents while a sprint is running, it's reading a different `data/` than the sprint is writing — point both at the same `PAO_DATA_DIR`. The viewer prints its `data :` path on startup.
+
 ### Best UX: install the `/sprint` slash command into Claude Code
 
 ```bash

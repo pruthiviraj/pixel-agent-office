@@ -63,6 +63,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const http = require("http");
 const https = require("https");
 const { execFile, spawnSync } = require("child_process");
@@ -73,7 +74,15 @@ function flag(name) {
   const i = argv.indexOf("--" + name);
   return i >= 0 ? (argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : true) : undefined;
 }
-const DATA_DIR     = path.join(__dirname, "data");
+// State dir must be install-location-independent so the viewer (server.js) and
+// this orchestrator share it even when launched from different npx caches. Each
+// `npx github:...` can resolve to its own cache dir, so keying state off
+// __dirname meant two installs => two __dirname/data dirs => the viewer showed
+// stale/demo data while a sprint wrote elsewhere. Default to a single shared dir
+// under the user's home; override with PAO_DATA_DIR.
+const DATA_DIR     = process.env.PAO_DATA_DIR
+  ? path.resolve(process.env.PAO_DATA_DIR)
+  : path.join(os.homedir(), ".pixel-agent-office", "data");
 const TEAM_FILE    = path.join(DATA_DIR, "team.json");
 const CONTROL_FILE = path.join(DATA_DIR, "control.json");
 const ACK_FILE     = path.join(DATA_DIR, "control-ack.json");
@@ -812,6 +821,7 @@ async function main() {
   if (SPRINT_BRANCH) console.log(`  branch  : ${SPRINT_BRANCH}  (isolated sprint branch)`);
   if (BUDGET != null) console.log(`  budget  : $${BUDGET.toFixed(2)} hard cap (ORCH_BUDGET_USD)`);
   if (WEBHOOK) console.log(`  webhook : ${WEBHOOK}`);
+  console.log(`  data    : ${DATA_DIR}`);
   console.log(`  view    : start the office (node server.js) and watch the team →\n`);
   if (!DRY && !GITBASH && process.platform === "win32")
     console.log("  ⚠ git bash not found — set CLAUDE_CODE_GIT_BASH_PATH if workers fail to start.\n");
