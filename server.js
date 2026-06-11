@@ -599,7 +599,9 @@ const server = http.createServer(async (req, res) => {
       catch (e) { return json(200, { id, logs: "", error: e.message }); }
     }
 
-    let file = url.pathname === "/" ? "/index.html" : url.pathname;
+    // Default to the full pixel office (control plane + cost/budget HUD live here
+    // via office-extras.js). The leaner index.html stays reachable at /index.html.
+    let file = url.pathname === "/" ? "/pixel.html" : url.pathname;
     const fp = path.join(PUBLIC_DIR, path.normalize(file).replace(/^([.][.][/\\])+/, ""));
     if (!fp.startsWith(PUBLIC_DIR) || !fs.existsSync(fp)) { res.writeHead(404); return res.end("not found"); }
     res.writeHead(200, { "Content-Type": MIME[path.extname(fp)] || "application/octet-stream" });
