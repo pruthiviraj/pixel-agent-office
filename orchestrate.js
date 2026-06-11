@@ -88,6 +88,9 @@ const CONTROL_FILE = path.join(DATA_DIR, "control.json");
 const ACK_FILE     = path.join(DATA_DIR, "control-ack.json");
 const HISTORY_DIR  = path.join(DATA_DIR, "history");
 const DRY        = !!flag("dry-run") || process.env.ORCH_DRYRUN === "1";
+// plan-only: run the REAL PM plan on the actual epic, print it, then stop
+// before any dev/QA work (one cheap real call — a true preview of YOUR tasks).
+const PLAN_ONLY  = !!flag("plan-only") || process.env.ORCH_PLAN_ONLY === "1";
 const PROJECT    = path.resolve(flag("project") || process.env.ORCH_PROJECT || ".");
 const CAP        = +(process.env.ORCH_CONCURRENCY || 3);
 const MAX_RETRY  = +(process.env.ORCH_MAX_RETRIES || 2);
@@ -107,7 +110,13 @@ const RISK_ACK     = !!flag("i-understand-risk") || process.env.ORCH_I_UNDERSTAN
 
 // ---------- stack profile (how we talk to the agents) -----------------------
 function loadProfile() {
-  const name = String(flag("profile") || process.env.ORCH_PROFILE || "software").trim();
+  let name = String(flag("profile") || process.env.ORCH_PROFILE || "").trim();
+  if (!name) {
+    // auto-detect the stack: an SFDX project (sfdx-project.json) gets the
+    // salesforce profile; everything else falls back to the generic software one.
+    try { name = fs.existsSync(path.join(PROJECT, "sfdx-project.json")) ? "salesforce" : "software"; }
+    catch { name = "software"; }
+  }
   const file = path.join(__dirname, "profiles", name + ".js");
   if (!fs.existsSync(file)) {
     console.error(`Profile not found: ${name} (looked for ${file}).\n` +
@@ -450,7 +459,7 @@ async function planEpic() {
   writeState();
   note(`PM is planning the epic…${pmA ? ` (${pmA.name} · ${levelOf(pmA.xp)})` : ""}`);
   let plan;
-  if (DRY) {
+  if (DRY && !PLAN_ONLY) {
     await new Promise((r) => setTimeout(r, 1200));
     applyUsage("pm", simUsage());
     plan = PROFILE.examplePlan;
@@ -886,9 +895,10 @@ async function main() {
   }
   if (!DRY && !fs.existsSync(PROJECT)) { console.error("Project folder not found: " + PROJECT); process.exit(1); }
 
-  preflight();
+  // plan-only never writes code, so skip the git branch/dirty preflight entirely.
+  if (!PLAN_ONLY) preflight();
 
-  console.log(`\n  Pixel Agent Office — Orchestrator${DRY ? "  (DRY RUN)" : ""}`);
+  console.log(`\n  Pixel Agent Office — Orchestrator${PLAN_ONLY ? "  (PLAN ONLY)" : DRY ? "  (DRY RUN)" : ""}`);
   console.log(`  run     : ${RUN_ID}`);
   console.log(`  project : ${PROJECT}`);
   console.log(`  profile : ${PROFILE.name}`);
@@ -904,6 +914,23 @@ async function main() {
   startControl();
   phase = "building";
   await planEpic();
+
+  // plan-only: show the REAL breakdown of THIS epic, then stop (no code written).
+  if (PLAN_ONLY) {
+    console.log("\n  ── planned tasks (plan-only · no code written) ──");
+    if (summary) console.log("  " + summary + "\n");
+    for (const t of tasks) {
+      console.log(`  ${t.id}  ${t.title}${t.deps && t.deps.length ? "   ⟵ after " + t.deps.join(", ") : ""}`);
+      if (t.description) console.log(`        ${t.description}`);
+      if (t.acceptance && t.acceptance.length) console.log(`        done when: ${t.acceptance.join("; ")}`);
+    }
+    const ptot = computeTotals();
+    console.log(`\n  plan spend: $${ptot.costUsd.toFixed(4)} · tokens in/out: ${ptot.tokensIn}/${ptot.tokensOut}`);
+    console.log(`  → Re-run without --plan-only to build these on an agent/run-* branch.\n`);
+    writeState();
+    process.exit(0);
+  }
+
   if (!cancelled) { phase = "building"; schedule(); }
   await allDone;
 

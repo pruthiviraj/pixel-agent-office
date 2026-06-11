@@ -84,11 +84,15 @@ Sprint goal: $ARGUMENTS
 
 Follow this exact protocol:
 
-1. **Dry-run first** (no API spend) to show the task breakdown:
+1. **Plan-only first** to preview the REAL task breakdown for this goal (one
+   cheap PM call — writes no code, creates no branch):
    \`\`\`
-   npx -y github:pruthiviraj/pixel-agent-office sprint "$ARGUMENTS" --dry-run
+   npx -y github:pruthiviraj/pixel-agent-office sprint "$ARGUMENTS" --plan-only
    \`\`\`
-   Show the user the planned tasks and ask them to confirm.
+   Show the user the planned tasks and ask them to confirm. The stack profile is
+   auto-detected (an SFDX repo uses the salesforce profile). NOTE: --dry-run is a
+   UI/HUD demo that shows a canned sample plan, NOT your goal — don't use it to
+   preview real work.
 
 2. **On approval, run for real**. This auto-creates an \`agent/run-*\` branch and
    refuses to touch main/master or a dirty worktree:
@@ -112,7 +116,8 @@ This repo can be built by a Claude Code agent team via Pixel Agent Office.
 To run a sprint from the repo root:
   npx github:pruthiviraj/pixel-agent-office sprint --epic ./epic.md
 Viewer: npx github:pruthiviraj/pixel-agent-office   (http://localhost:4040)
-Use --dry-run first to preview the task breakdown with no API spend.
+Use --plan-only first to preview the real task breakdown for your goal (cheap,
+writes no code). (--dry-run is only a UI demo with a canned sample plan.)
 Always run on a branch; review the diff before merging.
 `;
 
@@ -210,7 +215,9 @@ switch (cmd) {
     npx github:pruthiviraj/pixel-agent-office "build a discount engine"
                               # same as: sprint "build a discount engine"
 
-  Safety flags (sprint): --dry-run --allow-main --allow-dirty --no-branch
+  Preview:  --plan-only   real PM breakdown of your goal, no code/branch (cheap)
+            --dry-run     UI/HUD demo only — canned sample plan, ignores your goal
+  Safety flags (sprint): --allow-main --allow-dirty --no-branch
                          --i-understand-risk        (required with ORCH_SKIP_PERMISSIONS=1)
   See README for the full env-var surface.
 `);
