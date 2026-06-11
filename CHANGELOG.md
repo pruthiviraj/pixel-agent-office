@@ -5,13 +5,21 @@ The format loosely follows [Keep a Changelog](https://keepachangelog.com/), and 
 
 ## [0.3.1] — 2026-06-11
 
+### Added
+
+- **Answer agents from the office — no terminal round-trip** (drawer reply + control plane). Click an orchestrated agent and a reply box appears: your text is sent as a `guide` control command, injected into the task as "OPERATOR GUIDANCE", and the task re-runs with it (re-queued if it had finished/failed). The sprint board also regains per-task **Retry / Pass / Fail** controls. So when an agent raises its hand for input you respond in-place instead of switching screens.
+- **Persistent per-project crew with XP + leveling** (`orchestrate.js`, `server.js`, Project Brain). Each project keeps a named team (`roster.json`, keyed by project path) that **recurs across sprints**: agents are assigned to PM/dev/QA work, earn XP for **shipped** tasks (dev +2, tester +1, PM +1 per shipped task), and level up **Junior → Mid → Senior → Staff → Principal** (0 / 3 / 8 / 20 / 40 xp). Fixed crew sized to the concurrency cap; same names return more senior each run. The office **Project Brain** now shows the roster (name · level · xp · bar-to-next-tier · sprints/tasks of tenure) instead of bare aggregate XP, and promotions log live ("★ Maya promoted: MID → SENIOR").
+
 ### Fixed
+
+- **LEARN-folder failures are now visible** (Project Brain) — the button shells a headless `claude -p` in the folder; if that fails it stored `lastError` silently. The Brain now surfaces the error + the requirement (claude on PATH + logged in, git-bash on Windows). XP also no longer requires `claude --bg` named sessions — orchestrated sprint work feeds the roster directly.
 
 - **Viewer and sprint now share one state dir** (`orchestrate.js`, `server.js`) — state (`team.json`, `history/`, control channel) was keyed off `__dirname/data`, so when `npx github:...` resolved the viewer and the sprint to different cache installs they wrote/read different `data/` dirs and the office fell back to its built-in **demo** agents while a real sprint was running. `DATA_DIR` now resolves to an install-location-independent `~/.pixel-agent-office/data` (override with `PAO_DATA_DIR`); both startup banners print the resolved path.
 
 ### Changed
 
 - **`/` now serves the full pixel office** (`server.js`) — the control plane (pause / resume / cancel) and the cost/budget HUD live in `office-extras.js`, which only `pixel.html` loads. Visiting the default route previously served the leaner `index.html` with none of those controls. The pixel office is now the default; `index.html` stays reachable at `/index.html`.
+- **Unified office (`pixel.html` rebuilt on the Agent Office engine)** — `pixel.html` now uses index.html's animated character/office-space canvas (humans walking, typing, cheering across PM / Dev / QA / Lobby zones) and gains the **Sprint Board** and **Project Brain (project-folder + LEARN)** sections, *while keeping* the cost/budget HUD and pause/resume/cancel/theme/present control plane. One office with the floor view, the sprint, the project knowledge, and live controls — instead of two divergent pages. `office-extras.js` is wired via a shared global `ingest(data)` (also used by `?replay=`).
 
 ## [0.3.0] — 2026-06-10
 

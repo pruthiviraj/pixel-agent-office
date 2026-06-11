@@ -183,6 +183,55 @@ function note(msg) {
   events.push({ at: Date.now(), msg });
   console.log(line);
 }
+// ---------- persistent per-project crew (roster.json) ----------------------
+// A project keeps a named team that recurs across sprints, earns XP for shipped
+// work, and levels up (Junior→Mid→Senior→Staff→Principal). Stored per project
+// path; server.js merges it into /api/state so the office "Project Brain" shows it.
+const ROSTER_FILE = path.join(DATA_DIR, "roster.json");
+const XP_LEVELS = [["JUNIOR", 0], ["MID", 3], ["SENIOR", 8], ["STAFF", 20], ["PRINCIPAL", 40]];
+function levelOf(xp) { let n = "JUNIOR"; for (const [name, min] of XP_LEVELS) if ((xp || 0) >= min) n = name; return n; }
+const NAME_POOL = {
+  planning:  ["Maya", "Omar", "Priya", "Sven", "Lena", "Arjun"],
+  developer: ["Ada", "Linus", "Grace", "Ken", "Hopper", "Turing", "Lovelace", "Ritchie"],
+  tester:    ["Quinn", "Bly", "Riya", "Tess", "Nadia", "Cho", "Ivo", "Wren"],
+};
+let rosterAll = (() => { try { return JSON.parse(fs.readFileSync(ROSTER_FILE, "utf8")); } catch { return {}; } })();
+function projRoster() { if (!rosterAll[PROJECT]) rosterAll[PROJECT] = { planning: [], developer: [], tester: [] }; return rosterAll[PROJECT]; }
+function saveRoster() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(ROSTER_FILE, JSON.stringify(rosterAll, null, 2)); } catch {} }
+const crew = { planning: [], developer: [], tester: [] };
+const _participated = new Set();
+const _rr = { developer: 0, tester: 0 };
+function ensureCrew(team, n) {
+  const r = projRoster(); if (!r[team]) r[team] = [];
+  const pool = NAME_POOL[team] || ["Agent"];
+  while (r[team].length < n) {
+    const i = r[team].length;
+    r[team].push({ name: pool[i % pool.length] + (i >= pool.length ? " " + (Math.floor(i / pool.length) + 1) : ""),
+      role: team, xp: 0, tasks: 0, sprints: 0, joinedAt: Date.now(), lastRun: null });
+  }
+  crew[team] = r[team];
+  return r[team];
+}
+function setupCrew() { ensureCrew("planning", 1); ensureCrew("developer", CAP); ensureCrew("tester", CAP); saveRoster(); }
+function pickAgent(team) {
+  const list = crew[team] || []; if (!list.length) return null;
+  const a = team === "planning" ? list[0] : list[(_rr[team]++) % list.length];
+  _participated.add(team + "::" + a.name);
+  return a;
+}
+function awardXP(agent, n) {
+  if (!agent) return;
+  const before = levelOf(agent.xp);
+  agent.xp = (agent.xp || 0) + n; agent.tasks = (agent.tasks || 0) + 1;
+  const after = levelOf(agent.xp);
+  if (after !== before) note(`★ ${agent.name} promoted: ${before} → ${after}`);
+}
+function creditSprint() {
+  for (const team of ["planning", "developer", "tester"]) for (const a of (crew[team] || []))
+    if (_participated.has(team + "::" + a.name)) { a.sprints = (a.sprints || 0) + 1; a.lastRun = RUN_ID; }
+  saveRoster();
+}
+
 const ROOM = { pm: "planning", developer: "dev", tester: "qa" };
 function setWorker(id, patch) {
   const w = { ...(workers[id] || {}), id, ...patch };
@@ -241,6 +290,7 @@ function writeState() {
   fs.writeFileSync(TEAM_FILE, JSON.stringify(out, null, 2));
   // logs served by the dashboard drawer (separate file to keep team.json lean)
   fs.writeFileSync(path.join(DATA_DIR, "team-logs.json"), JSON.stringify(logs));
+  saveRoster();   // persist live XP so the office shows the crew levelling in real time
   writeHistory();
 }
 
@@ -392,10 +442,13 @@ Rules: ids T1,T2,...; deps reference only earlier ids; 3-7 tasks; realistic
 components for this codebase; acceptance criteria must be objectively checkable.`;
 
 async function planEpic() {
-  setWorker("pm", { name: `pm: ${shorten(EPIC, 40)}`, team: "planning", status: "working",
+  setupCrew();
+  const pmA = pickAgent("planning");
+  setWorker("pm", { name: pmA ? `${pmA.name} · PM` : `pm: ${shorten(EPIC, 40)}`,
+    agentName: pmA && pmA.name, agentTeam: "planning", team: "planning", status: "working",
     summary: "decomposing the epic into tasks…", cwd: PROJECT, startedAt: Date.now(), role: "pm" });
   writeState();
-  note("PM is planning the epic…");
+  note(`PM is planning the epic…${pmA ? ` (${pmA.name} · ${levelOf(pmA.xp)})` : ""}`);
   let plan;
   if (DRY) {
     await new Promise((r) => setTimeout(r, 1200));
@@ -467,7 +520,9 @@ function schedule() {
 function startDev(t) {
   t.state = "dev"; running++;
   const id = `${t.id}-dev`;
-  setWorker(id, { name: `dev: ${t.title}`, team: "developer", status: "working",
+  const devA = pickAgent("developer"); t.devAgent = devA;
+  setWorker(id, { name: devA ? devA.name : `dev: ${t.title}`, agentName: devA && devA.name, agentTeam: "developer",
+    team: "developer", status: "working",
     summary: t.retries ? `reworking (attempt ${t.retries + 1}) — ${t.notes}` : t.description,
     cwd: PROJECT, startedAt: Date.now(), role: "developer", taskId: t.id });
   note(`→ DEV  ${t.id} "${t.title}"${t.retries ? ` (rework #${t.retries})` : ""}`);
@@ -486,7 +541,9 @@ function startDev(t) {
 function startQA(t) {
   t.state = "qa"; running++;
   const id = `${t.id}-qa`;
-  setWorker(id, { name: `test: ${t.qa.title}`, team: "tester", status: "working",
+  const qaA = pickAgent("tester"); t.qaAgent = qaA;
+  setWorker(id, { name: qaA ? qaA.name : `test: ${t.qa.title}`, agentName: qaA && qaA.name, agentTeam: "tester",
+    team: "tester", status: "working",
     summary: "verifying acceptance criteria…", cwd: PROJECT, startedAt: Date.now(), role: "tester", taskId: t.id });
   note(`→ QA   ${t.id} verifying`);
   writeState();
@@ -498,8 +555,11 @@ function startQA(t) {
     const verdict = parseVerdict(res.out, res.ok);
     if (verdict === "pass") {
       t.state = "done";
-      setWorker(id, { status: "completed", summary: "PASS ✓" });
-      setWorker(`${t.id}-dev`, { status: "completed", summary: "shipped ✓" });
+      awardXP(t.devAgent, 2);          // the dev who shipped it
+      awardXP(t.qaAgent, 1);           // the tester who verified it
+      awardXP(crew.planning[0], 1);    // the PM gets credit per shipped task
+      setWorker(id, { status: "completed", summary: t.qaAgent ? `PASS ✓ · ${t.qaAgent.name} +1xp` : "PASS ✓" });
+      setWorker(`${t.id}-dev`, { status: "completed", summary: t.devAgent ? `shipped ✓ · ${t.devAgent.name} +2xp` : "shipped ✓" });
       note(`✓ DONE ${t.id} — QA passed`);
     } else {
       t.notes = firstFail(res.out);
@@ -540,6 +600,7 @@ function checkDone() {
 // finalize: stamp endedAt, persist state + history, fire the webhook, release main()
 function finishSprint() {
   if (phase === "done") return;
+  creditSprint();   // +1 sprint of tenure for everyone who worked this run
   phase = "done";
   endedAt = Date.now();
   stopControl();
@@ -629,6 +690,19 @@ function execCommand(c) {
         note(`✗ ${t.id} FORCE-FAILED by operator${c.reason ? " — " + c.reason : ""}`);
       } else note(`⚠ force-fail ignored — ${c.taskId || "?"} not active`);
       break;
+    case "guide":
+      if (t) {
+        t.guidance = (t.guidance ? t.guidance + "\n" : "") + (c.reason || "").trim();
+        note(`💬 ${t.id} — operator answered from the office: "${shorten(c.reason || "", 60)}"`);
+        // re-run the task with the new guidance if it's finished/idle; if it's
+        // still in flight, the guidance is picked up on the next rework.
+        if (["failed", "cancelled", "done"].includes(t.state)) {
+          killTask(t); t.state = "planned"; t.retries = 0;
+          for (const wid of [`${t.id}-dev`, `${t.id}-qa`]) if (workers[wid]) setWorker(wid, { status: "idle", summary: "re-queued with your guidance" });
+          note(`↻ ${t.id} re-queued with your guidance`);
+        }
+      } else note(`⚠ guide ignored — ${c.taskId || "?"} not found`);
+      break;
     default:
       note(`⚠ unknown control command: ${c.type}`);
   }
@@ -693,6 +767,7 @@ function devPrompt(t) {
     t.components.length ? `Components: ${t.components.join(", ")}` : "",
     t.acceptance.length ? `Acceptance criteria:\n- ${t.acceptance.join("\n- ")}` : "",
     t.notes ? `\nPREVIOUS QA REJECTED YOUR WORK — fix this specifically:\n${t.notes}` : "",
+    t.guidance ? `\nOPERATOR GUIDANCE (the human watching the office sent this — follow it):\n${t.guidance}` : "",
     lessonsBlock(),
     ``,
     fill(PROFILE.devGuidance),
